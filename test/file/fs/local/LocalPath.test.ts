@@ -12,6 +12,7 @@ import {
 } from "@filesystems/core/file/attribute";
 import {FileSystemProviders} from "@filesystems/core/file/spi";
 import {LocalFileSystemProvider} from "../../../../src";
+import {ReadableStreamDefaultReadDoneResult, ReadableStreamDefaultReadValueResult} from "stream/web";
 
 FileSystemProviders.addProvider(new LocalFileSystemProvider());
 const rootPath: Path = Paths.of("/");

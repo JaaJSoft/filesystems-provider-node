@@ -29,6 +29,7 @@ import {LocalDirectoryStream} from "./LocalDirectoryStream";
 import {LocalPath} from "./LocalPath";
 import {LocalBasicFileAttributesView, LocalFileOwnerAttributeView} from "./view";
 import {LocalPosixFileAttributeView} from "./view/LocalPosixFileAttributeView";
+import {ReadableStream, TextDecoderStream, TextEncoderStream, WritableStream} from "stream/web";
 
 /* It's a FileSystemProvider that provides a LocalFileSystem */
 export class LocalFileSystemProvider extends AbstractFileSystemProvider {
@@ -83,7 +84,7 @@ export class LocalFileSystemProvider extends AbstractFileSystemProvider {
         return new TextEncoderStream();
     }
 
-    private static start(path: Path, controller: ReadableStreamDefaultController<Uint8Array> | WritableStreamDefaultController, options?: OpenOption[]): number {
+    private static start(path: Path, controller: WritableStreamDefaultController, options?: OpenOption[] | undefined): number {
         let fd: number = -1;
         try {
             fd = fs.openSync(path.toString(), this.mapOptionsToFlags(options)); // TODO options
@@ -132,6 +133,7 @@ export class LocalFileSystemProvider extends AbstractFileSystemProvider {
         let fd: number = -1;
         return new ReadableStream<Uint8Array>({
             start: controller => {
+                // @ts-ignore
                 fd = LocalFileSystemProvider.start(path, controller, options);
             },
             pull: controller => {
@@ -155,6 +157,7 @@ export class LocalFileSystemProvider extends AbstractFileSystemProvider {
         let fd: number = -1;
         return new WritableStream<Uint8Array>({
             start: controller => {
+                // @ts-ignore
                 fd = LocalFileSystemProvider.start(path, controller, options);
             },
             write: (chunk, controller) => {
