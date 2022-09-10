@@ -1,9 +1,10 @@
 import {LocalPath} from "./LocalPath";
 import fs from "fs";
+import fsAsync from "fs/promises";
 import {PosixFilePermission} from "@filesystems/core/file/attribute";
 
-export function getPathStats(path: LocalPath, followLinks: boolean): fs.Stats {
-    return (followLinks ? fs.statSync(path.toString()) : fs.lstatSync(path.toString()));
+export async function getPathStats(path: LocalPath, followLinks: boolean): Promise<fs.Stats> {
+    return (followLinks ? fsAsync.lstat(path.toString()) : fsAsync.lstat(path.toString()));
 }
 
 export function convertPermissionsToPosix(perms: Iterable<PosixFilePermission>): number {

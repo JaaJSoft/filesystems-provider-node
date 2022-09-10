@@ -10,6 +10,7 @@ import {IllegalArgumentException} from "@filesystems/core/exception";
 /* `LocalPath` is a class that represents a path on the local file system. */
 export class LocalPath extends Path {
 
+
     // root component (may be empty)
     private readonly root: string;
     private readonly path: string;
@@ -339,11 +340,6 @@ export class LocalPath extends Path {
             return this.path.substring(this.offsets[i]);
         return this.path.substring(this.offsets[i], this.offsets[i + 1] - 1);
     }
-
-    public [Symbol.iterator](): Iterator<Path> {
-        return this.fileSystem.provider().newDirectoryStream(this, () => true)[Symbol.iterator]();
-    }
-
 
     public valueOf(): Object { // TODO
         return this.path.valueOf();

@@ -17,8 +17,13 @@ export class LocalDirectoryStream implements DirectoryStream<Path> {
         return files.map(value => LocalPath.parse(fileSystem, value.name)).filter(acceptFilter);
     }
 
-    public [Symbol.iterator](): Iterator<Path> {
-        return this.readDir(this.dir, this.acceptFilter)[Symbol.iterator]();
+    public [Symbol.asyncIterator](): AsyncIterator<Path> {
+        const pathIterator: IterableIterator<Path> = this.readDir(this.dir, this.acceptFilter)[Symbol.iterator]();
+        return new class implements AsyncIterator<Path> {
+            public next(...args: [] | [undefined]): Promise<IteratorResult<Path, any>> {
+                return Promise.resolve(pathIterator.next(...args));
+            }
+        };
     }
 
     public close(): void {

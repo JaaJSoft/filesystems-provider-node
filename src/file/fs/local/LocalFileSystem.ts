@@ -20,7 +20,7 @@ export class LocalFileSystem extends FileSystem {
         this.defaultRoot = parsedPath.root;
     }
 
-    public close() {
+    public async close(): Promise<void> {
         throw new UnsupportedOperationException();
     }
 

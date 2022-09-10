@@ -4,6 +4,7 @@ import {LocalUserPrincipal} from "../LocalUserPrincipal";
 import {getPathStats} from "../Helper";
 import {AttributeViewName, FileOwnerAttributeView, UserPrincipal} from "@filesystems/core/file/attribute";
 import {IllegalArgumentException, UnsupportedOperationException} from "@filesystems/core/exception";
+import fsAsync from "fs/promises";
 
 /* It implements the FileOwnerAttributeView interface and provides a way to get and set the owner of a file */
 export class LocalFileOwnerAttributeView implements FileOwnerAttributeView {
@@ -22,8 +23,8 @@ export class LocalFileOwnerAttributeView implements FileOwnerAttributeView {
         return "owner";
     }
 
-    public getOwner(): UserPrincipal {
-        const stats = getPathStats(this.path, this.followsLinks);
+    public async getOwner(): Promise<UserPrincipal> {
+        const stats = await getPathStats(this.path, this.followsLinks);
         return this.buildOwnerUserPrincipal(stats);
     }
 
@@ -32,20 +33,21 @@ export class LocalFileOwnerAttributeView implements FileOwnerAttributeView {
 
     }
 
-    public setOwner(owner: UserPrincipal): void {
+    public async setOwner(owner: UserPrincipal): Promise<void> {
         if (!(owner instanceof LocalUserPrincipal)) {
             throw new UnsupportedOperationException("the type of user must be LocalUserPrincipal");
         }
+        await this.path.getFileSystem().provider().checkAccess(this.path);
         const pathLike = this.path.toString();
-        const stats = getPathStats(this.path, this.followsLinks);
+        const stats = await getPathStats(this.path, this.followsLinks);
         if (this.followsLinks) {
-            fs.chownSync(pathLike, owner.getUid(), stats.gid);
+            await fsAsync.chown(pathLike, owner.getUid(), stats.gid);
         } else {
-            fs.lchownSync(pathLike, owner.getUid(), stats.gid);
+            await fsAsync.lchown(pathLike, owner.getUid(), stats.gid);
         }
     }
 
-    public readAttributesByName(attributes: string[]): Map<string, Object> {
+    public async readAttributesByName(attributes: string[]): Promise<Map<string, Object>> {
         const result = new Map<string, Object>();
         for (let attribute of attributes) {
             if (attribute === "*" || attribute === LocalFileOwnerAttributeView.OWNER_NAME) {
@@ -57,9 +59,9 @@ export class LocalFileOwnerAttributeView implements FileOwnerAttributeView {
         return result;
     }
 
-    public setAttributeByName(attribute: string, value: Object): void {
+    public async setAttributeByName(attribute: string, value: Object): Promise<void> {
         if (attribute === LocalFileOwnerAttributeView.OWNER_NAME) {
-            this.setOwner(value as UserPrincipal);
+            await this.setOwner(value as UserPrincipal);
         } else {
             throw new IllegalArgumentException("'" + this.name() + ":" + attribute + "' not recognized");
         }
