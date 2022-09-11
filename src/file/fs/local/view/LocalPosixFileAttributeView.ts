@@ -1,7 +1,7 @@
 import {convertPermissionsToPosix, convertPosixPermissions, getPathStats} from "../Helper";
 import fs from "fs";
 import {LocalGroupPrincipal} from "../LocalGroupPrincipal";
-import {AbstractBasicFileAttributeView} from "@filesystems/core/file/fs/abstract";
+import {AbstractPosixFileAttributeView} from "@filesystems/core/file/fs/abstract";
 import {
     AttributeViewName,
     BasicFileAttributes,
@@ -18,7 +18,7 @@ import {LocalPath} from "../LocalPath";
 import {UnsupportedOperationException} from "@filesystems/core/exception";
 import fsAsync from "fs/promises";
 
-export class LocalPosixFileAttributeView extends AbstractBasicFileAttributeView implements PosixFileAttributeView {
+export class LocalPosixFileAttributeView extends AbstractPosixFileAttributeView implements PosixFileAttributeView {
 
     private fileOwnerView: LocalFileOwnerAttributeView;
     private basicAttributesView: LocalBasicFileAttributesView;
