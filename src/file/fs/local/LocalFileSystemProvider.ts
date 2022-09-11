@@ -10,7 +10,6 @@ import {
     LinkOption,
     OpenOption,
     Path,
-    StandardOpenOption,
 } from "@filesystems/core/file";
 import * as jsurl from "url";
 import fs from "fs";
@@ -31,6 +30,7 @@ import {LocalPath} from "./LocalPath";
 import {LocalBasicFileAttributesView, LocalFileOwnerAttributeView} from "./view";
 import {LocalPosixFileAttributeView} from "./view/LocalPosixFileAttributeView";
 import {ReadableStream, TextDecoderStream, TextEncoderStream, WritableStream} from "stream/web";
+import {mapCopyOptionsToFlags, mapOpenOptionsToFlags} from "./Helper";
 
 /* It's a FileSystemProvider that provides a LocalFileSystem */
 export class LocalFileSystemProvider extends AbstractFileSystemProvider {
@@ -88,42 +88,11 @@ export class LocalFileSystemProvider extends AbstractFileSystemProvider {
     private static start(path: Path, controller: WritableStreamDefaultController, options?: OpenOption[] | undefined): number {
         let fd: number = -1;
         try {
-            fd = fs.openSync(path.toString(), this.mapOptionsToFlags(options)); // TODO options
+            fd = fs.openSync(path.toString(), mapOpenOptionsToFlags(options)); // TODO options
         } catch (e) {
             controller.error(e);
         }
         return fd;
-    }
-
-    private static mapOptionsToFlags(options: OpenOption[] = [StandardOpenOption.READ]): number {
-        let flags: number[] = options.flatMap(value => {
-            switch (value) {
-                case StandardOpenOption.READ:
-                    return [fs.constants.O_RDONLY];
-                case StandardOpenOption.WRITE:
-                    return [fs.constants.O_WRONLY];
-                case StandardOpenOption.APPEND:
-                    return [fs.constants.O_APPEND];
-                case StandardOpenOption.TRUNCATE_EXISTING:
-                    return [fs.constants.O_TRUNC];
-                case StandardOpenOption.CREATE:
-                    return [fs.constants.O_CREAT];
-                case StandardOpenOption.CREATE_NEW:
-                    return [fs.constants.O_CREAT, fs.constants.O_EXCL];
-                case StandardOpenOption.SYNC:
-                    return [fs.constants.O_SYNC];
-                case StandardOpenOption.DSYNC:
-                    return [fs.constants.O_DSYNC];
-                case LinkOption.NOFOLLOW_LINKS:
-                    return [fs.constants.O_NOFOLLOW];
-                default:
-                    return [];
-            }
-        });
-        if (flags.length === 1) {
-            return flags[0];
-        }
-        return flags.reduce((previousValue, currentValue) => previousValue | currentValue);
     }
 
     private static close(fd: number): void {
@@ -224,12 +193,17 @@ export class LocalFileSystemProvider extends AbstractFileSystemProvider {
 
     }
 
-    public copy(source: Path, target: Path, options?: CopyOption[]): Promise<void> {
-        throw new Error("Method not implemented.");
+    public async copy(source: Path, target: Path, options?: CopyOption[]): Promise<void> {
+        await fsAsync.copyFile(source.toString(), target.toString(), mapCopyOptionsToFlags(options));
     }
 
-    public move(source: Path, target: Path, options?: CopyOption[]): Promise<void> {
-        throw new Error("Method not implemented.");
+    public async move(source: Path, target: Path, options?: CopyOption[]): Promise<void> {
+        try {
+            await this.copy(source, target, options);
+            await this.delete(source);
+        } catch (e) {
+            await this.deleteIfExists(target);
+        }
     }
 
     public async isHidden(obj: Path): Promise<boolean> {
