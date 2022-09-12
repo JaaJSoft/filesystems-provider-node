@@ -1,3 +1,20 @@
+/*
+ * FileSystems - FileSystem abstraction for JavaScript
+ * Copyright (C) 2022 JaaJSoft
+ *
+ * this program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 import * as fs from "fs";
 import {LocalPath} from "./LocalPath";
 import {DirectoryStream, Path} from "@filesystems/core/file";
@@ -17,8 +34,13 @@ export class LocalDirectoryStream implements DirectoryStream<Path> {
         return files.map(value => LocalPath.parse(fileSystem, value.name)).filter(acceptFilter);
     }
 
-    public [Symbol.iterator](): Iterator<Path> {
-        return this.readDir(this.dir, this.acceptFilter)[Symbol.iterator]();
+    public [Symbol.asyncIterator](): AsyncIterator<Path> {
+        const pathIterator: IterableIterator<Path> = this.readDir(this.dir, this.acceptFilter)[Symbol.iterator]();
+        return new class implements AsyncIterator<Path> {
+            public next(...args: [] | [undefined]): Promise<IteratorResult<Path, any>> {
+                return Promise.resolve(pathIterator.next(...args));
+            }
+        };
     }
 
     public close(): void {

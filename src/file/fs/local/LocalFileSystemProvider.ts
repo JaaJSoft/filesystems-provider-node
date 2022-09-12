@@ -1,3 +1,20 @@
+/*
+ * FileSystems - FileSystem abstraction for JavaScript
+ * Copyright (C) 2022 JaaJSoft
+ *
+ * this program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 import {AbstractFileSystemProvider} from "@filesystems/core/file/fs/abstract";
 import {LocalFileSystem} from "./LocalFileSystem";
 import {
@@ -10,10 +27,10 @@ import {
     LinkOption,
     OpenOption,
     Path,
-    StandardOpenOption,
 } from "@filesystems/core/file";
 import * as jsurl from "url";
 import fs from "fs";
+import fsAsync from "fs/promises";
 import {FileSystemProviders} from "@filesystems/core/file/spi";
 import {IllegalArgumentException, UnsupportedOperationException} from "@filesystems/core/exception";
 import {AccessDeniedException, FileSystemAlreadyExistsException} from "@filesystems/core/file/exception";
@@ -30,6 +47,7 @@ import {LocalPath} from "./LocalPath";
 import {LocalBasicFileAttributesView, LocalFileOwnerAttributeView} from "./view";
 import {LocalPosixFileAttributeView} from "./view/LocalPosixFileAttributeView";
 import {ReadableStream, TextDecoderStream, TextEncoderStream, WritableStream} from "stream/web";
+import {mapCopyOptionsToFlags, mapOpenOptionsToFlags} from "./Helper";
 
 /* It's a FileSystemProvider that provides a LocalFileSystem */
 export class LocalFileSystemProvider extends AbstractFileSystemProvider {
@@ -45,12 +63,12 @@ export class LocalFileSystemProvider extends AbstractFileSystemProvider {
         return this.theFileSystem;
     }
 
-    public getFileSystem(url: URL): FileSystem {
+    public async getFileSystem(url: URL): Promise<FileSystem> {
         this.checkURL(url);
         return this.theFileSystem;
     }
 
-    public getPath(url: URL): Path {
+    public async getPath(url: URL): Promise<Path> {
         return this.theFileSystem.getPath(jsurl.fileURLToPath(url));
     }
 
@@ -69,7 +87,7 @@ export class LocalFileSystemProvider extends AbstractFileSystemProvider {
             throw new IllegalArgumentException("Path component should be '/'");
     }
 
-    public newFileSystemFromUrl(url: URL, env: Map<string, any>): FileSystem {
+    public async newFileSystemFromUrl(url: URL, env: Map<string, any>): Promise<FileSystem> {
         this.checkURL(url);
         throw new FileSystemAlreadyExistsException();
     }
@@ -87,42 +105,11 @@ export class LocalFileSystemProvider extends AbstractFileSystemProvider {
     private static start(path: Path, controller: WritableStreamDefaultController, options?: OpenOption[] | undefined): number {
         let fd: number = -1;
         try {
-            fd = fs.openSync(path.toString(), this.mapOptionsToFlags(options)); // TODO options
+            fd = fs.openSync(path.toString(), mapOpenOptionsToFlags(options)); // TODO options
         } catch (e) {
             controller.error(e);
         }
         return fd;
-    }
-
-    private static mapOptionsToFlags(options: OpenOption[] = [StandardOpenOption.READ]): number {
-        let flags: number[] = options.flatMap(value => {
-            switch (value) {
-                case StandardOpenOption.READ:
-                    return [fs.constants.O_RDONLY];
-                case StandardOpenOption.WRITE:
-                    return [fs.constants.O_WRONLY];
-                case StandardOpenOption.APPEND:
-                    return [fs.constants.O_APPEND];
-                case StandardOpenOption.TRUNCATE_EXISTING:
-                    return [fs.constants.O_TRUNC];
-                case StandardOpenOption.CREATE:
-                    return [fs.constants.O_CREAT];
-                case StandardOpenOption.CREATE_NEW:
-                    return [fs.constants.O_CREAT, fs.constants.O_EXCL];
-                case StandardOpenOption.SYNC:
-                    return [fs.constants.O_SYNC];
-                case StandardOpenOption.DSYNC:
-                    return [fs.constants.O_DSYNC];
-                case LinkOption.NOFOLLOW_LINKS:
-                    return [fs.constants.O_NOFOLLOW];
-                default:
-                    return [];
-            }
-        });
-        if (flags.length === 1) {
-            return flags[0];
-        }
-        return flags.reduce((previousValue, currentValue) => previousValue | currentValue);
     }
 
     private static close(fd: number): void {
@@ -175,30 +162,30 @@ export class LocalFileSystemProvider extends AbstractFileSystemProvider {
         });
     }
 
-    public createFile(path: Path, attrs?: FileAttribute<any>[]): void {
-        fs.writeFileSync(path.toString(), "");
+    public async createFile(path: Path, attrs?: FileAttribute<any>[]): Promise<void> {
+        await fsAsync.writeFile(path.toString(), "");
         if (attrs) {
             attrs.forEach(value => this.setAttribute(path, value.name(), value.value()));
         }
     }
 
-    public createDirectory(dir: Path, attrs?: FileAttribute<any>[]): void {
-        fs.mkdirSync(dir.toString());
+    public async createDirectory(dir: Path, attrs?: FileAttribute<any>[]): Promise<void> {
+        await fsAsync.mkdir(dir.toString());
         if (attrs) {
             attrs.forEach(value => this.setAttribute(dir, value.name(), value.value()));
         }
     }
 
-    public newDirectoryStream(dir: Path, acceptFilter: (path?: Path) => boolean = () => true): DirectoryStream<Path> {
-        this.checkAccess(dir, [AccessMode.READ]);
+    public async newDirectoryStream(dir: Path, acceptFilter: (path?: Path) => boolean = () => true): Promise<DirectoryStream<Path>> {
+        await this.checkAccess(dir, [AccessMode.READ]);
         return new LocalDirectoryStream(dir, acceptFilter);
     }
 
-    public getFileStore(path: Path): FileStore {
+    public async getFileStore(path: Path): Promise<FileStore> {
         throw new Error("Method not implemented.");
     }
 
-    public checkAccess(obj: Path, modes?: AccessMode[]): void { // TODO finish this
+    public async checkAccess(obj: Path, modes?: AccessMode[]): Promise<void> { // TODO finish this
         const accessModesTocheck: AccessMode[] = [];
         if (modes) {
             accessModesTocheck.push(...modes);
@@ -207,62 +194,66 @@ export class LocalFileSystemProvider extends AbstractFileSystemProvider {
         }
         const path = obj.toString();
         try {
-            for (let mode of accessModesTocheck) {
+            await Promise.all(accessModesTocheck.map(mode => {
                 switch (mode) {
                     case AccessMode.READ:
-                        fs.accessSync(path, fs.constants.R_OK);
-                        break;
+                        return fsAsync.access(path, fs.constants.R_OK);
                     case AccessMode.WRITE:
-                        fs.accessSync(path, fs.constants.W_OK);
-                        break;
+                        return fsAsync.access(path, fs.constants.W_OK);
                     case AccessMode.EXECUTE:
-                        fs.accessSync(path, fs.constants.X_OK);
-                        break;
+                        return fsAsync.access(path, fs.constants.X_OK);
                 }
-            }
+            }));
         } catch (err) {
             throw new AccessDeniedException(path);
         }
 
     }
 
-    public copy(source: Path, target: Path, options?: CopyOption[]): Promise<void> {
-        throw new Error("Method not implemented.");
+    public async copy(source: Path, target: Path, options?: CopyOption[]): Promise<void> {
+        await fsAsync.copyFile(source.toString(), target.toString(), mapCopyOptionsToFlags(options));
     }
 
-    public move(source: Path, target: Path, options?: CopyOption[]): Promise<void> {
-        throw new Error("Method not implemented.");
+    public async move(source: Path, target: Path, options?: CopyOption[]): Promise<void> {
+        try {
+            await this.copy(source, target, options);
+            await this.delete(source);
+        } catch (e) {
+            await this.deleteIfExists(target);
+        }
     }
 
-    public isHidden(obj: Path): boolean {
-        this.checkAccess(obj);
+    public async isHidden(obj: Path): Promise<boolean> {
+        await this.checkAccess(obj);
         const name = obj.getFileName();
         if (name == null)
             return false;
         return name.startsWithStr(".");
     }
 
-    public isSameFile(obj1: Path, obj2: Path): boolean {
+    public async isSameFile(obj1: Path, obj2: Path): Promise<boolean> {
         if (obj1.equals(obj2)) {
             return true;
         }
         if (!(obj1 instanceof LocalPath) || !(obj2 instanceof LocalPath)) {
             return false;
         }
-        this.checkAccess(obj1);
-        this.checkAccess(obj2);
-        const attrs1 = this.readAttributesByName(obj1);
-        const attrs2 = this.readAttributesByName(obj2);
+        await Promise.all([this.checkAccess(obj1), this.checkAccess(obj2)]);
+
+        const [attrs1, attrs2] = await Promise.all([
+            this.readAttributesByName(obj1),
+            this.readAttributesByName(obj2),
+        ]);
+
         return attrs1.fileKey() === attrs2.fileKey();
     }
 
-    public delete(path: Path): boolean {
-        this.checkAccess(path, [AccessMode.WRITE]);
-        fs.rmSync(path.toString(), {});
-        return true;
+    public async delete(path: Path): Promise<void> {
+        await this.checkAccess(path, [AccessMode.WRITE]);
+        await fsAsync.rm(path.toString(), {});
     }
 
-    public readAttributesByName(path: Path, name?: AttributeViewName, options?: LinkOption[]): BasicFileAttributes {
+    public async readAttributesByName(path: Path, name?: AttributeViewName, options?: LinkOption[]): Promise<BasicFileAttributes> {
         switch (name) {
             case "basic":
             case "posix":

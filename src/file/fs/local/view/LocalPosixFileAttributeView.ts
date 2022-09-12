@@ -1,7 +1,24 @@
+/*
+ * FileSystems - FileSystem abstraction for JavaScript
+ * Copyright (C) 2022 JaaJSoft
+ *
+ * this program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 import {convertPermissionsToPosix, convertPosixPermissions, getPathStats} from "../Helper";
 import fs from "fs";
 import {LocalGroupPrincipal} from "../LocalGroupPrincipal";
-import {AbstractBasicFileAttributeView, AttributesBuilder} from "@filesystems/core/file/fs/abstract";
+import {AbstractPosixFileAttributeView} from "@filesystems/core/file/fs/abstract";
 import {
     AttributeViewName,
     BasicFileAttributes,
@@ -16,17 +33,9 @@ import {LocalFileOwnerAttributeView} from "./LocalFileOwnerAttributeView";
 import {LocalBasicFileAttributesView} from "./LocalBasicFileAttributesView";
 import {LocalPath} from "../LocalPath";
 import {UnsupportedOperationException} from "@filesystems/core/exception";
+import fsAsync from "fs/promises";
 
-export class LocalPosixFileAttributeView extends AbstractBasicFileAttributeView implements PosixFileAttributeView {
-    private static readonly PERMISSIONS_NAME: string = "permissions";
-    private static readonly OWNER_NAME: string = "owner";
-    private static readonly GROUP_NAME: string = "group";
-    private static readonly posixAttributeNames: Set<string> = new Set<string>([
-        LocalPosixFileAttributeView.PERMISSIONS_NAME,
-        LocalPosixFileAttributeView.OWNER_NAME,
-        LocalPosixFileAttributeView.GROUP_NAME,
-        ...this.basicAttributeNames,
-    ]);
+export class LocalPosixFileAttributeView extends AbstractPosixFileAttributeView implements PosixFileAttributeView {
 
     private fileOwnerView: LocalFileOwnerAttributeView;
     private basicAttributesView: LocalBasicFileAttributesView;
@@ -50,8 +59,8 @@ export class LocalPosixFileAttributeView extends AbstractBasicFileAttributeView 
         return new LocalGroupPrincipal(stats.gid, null);
     }
 
-    public readAttributes(): PosixFileAttributes {
-        const stats = getPathStats(this.path, this.followsLinks);
+    public async readAttributes(): Promise<PosixFileAttributes> {
+        const stats = await getPathStats(this.path, this.followsLinks);
         const basicFileAttributes: BasicFileAttributes = this.basicAttributesView.buildAttributes(stats);
         const owner: UserPrincipal = this.fileOwnerView.buildOwnerUserPrincipal(stats);
         const group: GroupPrincipal = this.buildGroupPrincipal(stats);
@@ -106,52 +115,33 @@ export class LocalPosixFileAttributeView extends AbstractBasicFileAttributeView 
         };
     }
 
-    public getOwner(): UserPrincipal {
+    public async getOwner(): Promise<UserPrincipal> {
         return this.fileOwnerView.getOwner();
     }
 
-    public setOwner(owner: UserPrincipal): void {
-        this.path.getFileSystem().provider().checkAccess(this.path);
-        this.fileOwnerView.setOwner(owner);
+    public async setOwner(owner: UserPrincipal): Promise<void> {
+        await this.fileOwnerView.setOwner(owner);
     }
 
-    public setGroup(group: GroupPrincipal): void {
+    public async setGroup(group: GroupPrincipal): Promise<void> {
         if (!(group instanceof LocalGroupPrincipal)) {
             throw new UnsupportedOperationException("the type of group must be LocalGroupPrincipal");
         }
         const pathLike = this.path.toString();
-        const stats = getPathStats(this.path, this.followsLinks);
+        const stats = await getPathStats(this.path, this.followsLinks);
         if (this.followsLinks) {
-            fs.chownSync(pathLike, stats.uid, group.getGid());
+            await fsAsync.chown(pathLike, stats.uid, group.getGid());
         } else {
-            fs.lchownSync(pathLike, stats.uid, group.getGid());
+            await fsAsync.lchown(pathLike, stats.uid, group.getGid());
         }
     }
 
-    public setPermissions(perms: Set<PosixFilePermission>): void {
-        this.path.getFileSystem().provider().checkAccess(this.path);
-        fs.chmodSync(this.path.toString(), convertPermissionsToPosix(perms));
+    public async setPermissions(perms: Set<PosixFilePermission>): Promise<void> {
+        await this.path.getFileSystem().provider().checkAccess(this.path);
+        await fsAsync.chmod(this.path.toString(), convertPermissionsToPosix(perms));
     }
 
-    public setTimes(lastModifiedTime?: FileTime, lastAccessTime?: FileTime, createTime?: FileTime): void {
-        this.basicAttributesView.setTimes(lastModifiedTime, lastAccessTime, createTime);
-    }
-
-
-    public readAttributesByName(attributes: string[]): Map<string, Object> {
-        const builder = AttributesBuilder.create(LocalPosixFileAttributeView.posixAttributeNames, attributes);
-        const posixFileAttributes: PosixFileAttributes = this.readAttributes();
-        this.addRequestedBasicAttributes(posixFileAttributes, builder);
-        if (builder.match(LocalPosixFileAttributeView.PERMISSIONS_NAME))
-            builder.add(LocalPosixFileAttributeView.PERMISSIONS_NAME, posixFileAttributes.permissions());
-        if (builder.match(LocalPosixFileAttributeView.OWNER_NAME))
-            builder.add(LocalPosixFileAttributeView.OWNER_NAME, posixFileAttributes.owner());
-        if (builder.match(LocalPosixFileAttributeView.GROUP_NAME))
-            builder.add(LocalPosixFileAttributeView.GROUP_NAME, posixFileAttributes.group());
-        return builder.build();
-    }
-
-    public setAttributeByName(attribute: string, value: Object): void {
-        super.setAttributeByName(attribute, value);
+    public async setTimes(lastModifiedTime?: FileTime, lastAccessTime?: FileTime, createTime?: FileTime): Promise<void> {
+        await this.basicAttributesView.setTimes(lastModifiedTime, lastAccessTime, createTime);
     }
 }

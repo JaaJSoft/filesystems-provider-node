@@ -1,3 +1,20 @@
+/*
+ * FileSystems - FileSystem abstraction for JavaScript
+ * Copyright (C) 2022 JaaJSoft
+ *
+ * this program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 import {LocalPath} from "../LocalPath";
 import fs from "fs";
 import {getPathStats} from "../Helper";
@@ -11,6 +28,7 @@ import {
 import {IOException} from "@filesystems/core/exception";
 import {AccessMode} from "@filesystems/core/file";
 import {floatToInt} from "@filesystems/core/utils";
+import fsAsync from "fs/promises";
 
 export class LocalBasicFileAttributesView extends AbstractBasicFileAttributeView implements BasicFileAttributeView {
     private readonly path: LocalPath;
@@ -26,9 +44,9 @@ export class LocalBasicFileAttributesView extends AbstractBasicFileAttributeView
         return "basic";
     }
 
-    public readAttributes(): BasicFileAttributes {
+    public async readAttributes(): Promise<BasicFileAttributes> {
         try {
-            const stats = getPathStats(this.path, this.followsLinks);
+            const stats = await getPathStats(this.path, this.followsLinks);
             return this.buildAttributes(stats);
         } catch (e) {
             throw new IOException((e as Error).message);
@@ -75,13 +93,13 @@ export class LocalBasicFileAttributesView extends AbstractBasicFileAttributeView
         };
     }
 
-    public setTimes(lastModifiedTime?: FileTime, lastAccessTime?: FileTime, createTime?: FileTime): void {
-        this.path.getFileSystem().provider().checkAccess(this.path, [AccessMode.WRITE]);
+    public async setTimes(lastModifiedTime?: FileTime, lastAccessTime?: FileTime, createTime?: FileTime): Promise<void> {
+        await this.path.getFileSystem().provider().checkAccess(this.path, [AccessMode.WRITE]);
         if (createTime) {
             console.warn("Node provider : not possible to update creationTime");
         }
-        const fileAttributes: BasicFileAttributes = this.readAttributes();
-        fs.lutimesSync(
+        const fileAttributes: BasicFileAttributes = await this.readAttributes();
+        await fsAsync.lutimes(
             this.path.toString(),
             lastAccessTime ? floatToInt(lastAccessTime.toSeconds()) : floatToInt(fileAttributes.lastAccessTime().toSeconds()),
             lastModifiedTime ? floatToInt(lastModifiedTime.toSeconds()) : floatToInt(fileAttributes.lastModifiedTime().toSeconds()),
