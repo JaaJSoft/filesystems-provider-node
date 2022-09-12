@@ -1,6 +1,6 @@
 {
   "name": "@filesystems/provider-node",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "node filesystem provider for filesystems-core",
   "main": "index.js",
   "type": "commonjs",
@@ -38,6 +38,6 @@
     "typescript": "^4.8.3"
   },
   "dependencies": {
-    "@filesystems/core": "0.2.4"
+    "@filesystems/core": "0.2.5"
   }
 }
