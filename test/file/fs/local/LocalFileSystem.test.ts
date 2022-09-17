@@ -37,6 +37,7 @@ test("LocalFileSystemFileStore", async () => {
 test("LocalFileSystemGetRootDirectories", async () => {
     const fileSystem = await FileSystems.getFileSystem(new URL("file://"));
     const rootPaths: Path[] = [...await fileSystem.getRootDirectories()];
+    console.log(rootPaths);
     if (os.platform() == "win32") {
         expect(rootPaths.length).toBeGreaterThan(1);
     } else {
