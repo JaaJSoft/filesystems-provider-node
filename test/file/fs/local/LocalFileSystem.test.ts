@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {FileSystems, Path} from "@filesystems/core/file";
+import {FileSystems, Path, Paths} from "@filesystems/core/file";
 import {LocalFileSystemProvider} from "../../../../src";
 import {FileSystemProviders} from "@filesystems/core/file/spi";
 import os from "os";
@@ -39,8 +39,10 @@ test("LocalFileSystemGetRootDirectories", async () => {
     const rootPaths: Path[] = [...await fileSystem.getRootDirectories()];
     console.log(rootPaths);
     if (os.platform() == "win32") {
-        expect(rootPaths.length).toBeGreaterThan(1);
+        const cRoot = await Paths.of("C:/");
+        expect(rootPaths.some(value => value.equals(cRoot)));
     } else {
-        expect(rootPaths.length).toBe(1);
+        const root = await Paths.of("/");
+        expect(rootPaths.some(value => value.equals(root)));
     }
 });
