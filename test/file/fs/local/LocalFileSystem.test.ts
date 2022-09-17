@@ -15,9 +15,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {FileSystems} from "@filesystems/core/file";
+import {FileSystems, Path} from "@filesystems/core/file";
 import {LocalFileSystemProvider} from "../../../../src";
 import {FileSystemProviders} from "@filesystems/core/file/spi";
+import os from "os";
 
 FileSystemProviders.register(new LocalFileSystemProvider());
 
@@ -31,4 +32,14 @@ test("LocalFileSystem", async () => {
 test("LocalFileSystemFileStore", async () => {
     const fileSystem = await FileSystems.getFileSystem(new URL("file://"));
     expect(await fileSystem.getFileStores()).toBeDefined();
+});
+
+test("LocalFileSystemGetRootDirectories", async () => {
+    const fileSystem = await FileSystems.getFileSystem(new URL("file://"));
+    const rootPaths: Path[] = [...await fileSystem.getRootDirectories()];
+    if (os.platform() == "win32") {
+        expect(rootPaths.length).toBeGreaterThan(1);
+    } else {
+        expect(rootPaths.length).toBe(1);
+    }
 });

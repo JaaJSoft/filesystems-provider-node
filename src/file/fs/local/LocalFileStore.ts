@@ -35,7 +35,20 @@ export class LocalFileStore implements FileStore {
     private readonly _displayName: string;
     private readonly _system: boolean;
 
-    constructor(name: string, type: string, blockSize: bigint, totalSpace: bigint, unallocatedSpace: bigint, usableSpace: bigint, readOnly: boolean, removable: boolean, isCdrom: boolean, mountPoints: string[], displayName: string, system: boolean) {
+    constructor(
+        name: string,
+        type: string,
+        blockSize: bigint,
+        totalSpace: bigint,
+        unallocatedSpace: bigint,
+        usableSpace: bigint,
+        readOnly: boolean,
+        removable: boolean,
+        isCdrom: boolean,
+        mountPoints: string[],
+        displayName: string,
+        system: boolean,
+    ) {
         this._name = name;
         this._type = type;
         this._blockSize = blockSize;

@@ -16,22 +16,22 @@
  */
 
 import * as jsPath from "path";
-import { FileSystemProvider } from "@filesystems/core/file/spi";
-import { LocalFileSystemProvider } from "./LocalFileSystemProvider";
-import { UnsupportedOperationException } from "@filesystems/core/exception";
-import { FileStore, FileSystem, Path, PathMatcher } from "@filesystems/core/file";
-import { Objects } from "@filesystems/core/utils";
-import { LocalPath } from "./LocalPath";
-import { AttributeViewName, UserPrincipalLookupService } from "@filesystems/core/file/attribute";
-import { list } from "drivelist";
-import { LocalFileStore } from "./LocalFileStore";
+import {FileSystemProvider} from "@filesystems/core/file/spi";
+import {LocalFileSystemProvider} from "./LocalFileSystemProvider";
+import {UnsupportedOperationException} from "@filesystems/core/exception";
+import {FileStore, FileSystem, Path, PathMatcher} from "@filesystems/core/file";
+import {Objects} from "@filesystems/core/utils";
+import {LocalPath} from "./LocalPath";
+import {AttributeViewName, UserPrincipalLookupService} from "@filesystems/core/file/attribute";
+import {list} from "drivelist";
+import {LocalFileStore} from "./LocalFileStore";
 
 export class LocalFileSystem extends FileSystem {
     private readonly fsProvider: FileSystemProvider;
     private readonly defaultDirectory: string;
     private readonly defaultRoot: string;
 
-    public constructor (provider: LocalFileSystemProvider, dir: string) {
+    public constructor(provider: LocalFileSystemProvider, dir: string) {
         super();
         this.fsProvider = provider;
         const parsedPath: jsPath.ParsedPath = jsPath.parse(dir);
@@ -39,16 +39,16 @@ export class LocalFileSystem extends FileSystem {
         this.defaultRoot = parsedPath.root;
     }
 
-    public async close (): Promise<void> {
+    public async close(): Promise<void> {
         throw new UnsupportedOperationException();
     }
 
-    public async getFileStores (): Promise<Iterable<FileStore>> {
+    public async getFileStores(): Promise<Iterable<FileStore>> {
         const drives = await list();
         return drives.map(value => LocalFileStore.create(value));
     }
 
-    public getPath (first: string, more?: string[]): Path {
+    public getPath(first: string, more?: string[]): Path {
         Objects.requireNonNullUndefined(first);
         let path = "";
         if ((more == null) || more.length === 0) {
@@ -66,45 +66,47 @@ export class LocalFileSystem extends FileSystem {
         return LocalPath.parse(this, path);
     }
 
-    public getPathMatcher (syntaxAndPattern: string): PathMatcher { // TODO
+    public getPathMatcher(syntaxAndPattern: string): PathMatcher { // TODO
         throw new Error("Method not implemented.");
     }
 
-    public async getRootDirectories (): Promise<Iterable<Path>> { // TODO find a better way
-        return this.getPath("/");
+    public async getRootDirectories(): Promise<Iterable<Path>> {
+        return [...(await this.getFileStores())]
+            .flatMap(fileStore => (fileStore as LocalFileStore).mountPoints())
+            .map(path => this.getPath(path));
     }
 
-    public getSeparator (): string {
+    public getSeparator(): string {
         return jsPath.sep;
     }
 
-    public getUserPrincipalLookupService (): UserPrincipalLookupService {
+    public getUserPrincipalLookupService(): UserPrincipalLookupService {
         throw new UnsupportedOperationException();
     }
 
-    public isOpen (): boolean {
+    public isOpen(): boolean {
         return true;
     }
 
-    public isReadOnly (): boolean {
+    public isReadOnly(): boolean {
         return false;
     }
 
-    public provider (): FileSystemProvider {
+    public provider(): FileSystemProvider {
         return this.fsProvider;
     }
 
     private static readonly supportedFileAttributeViews: Set<AttributeViewName> = new Set<AttributeViewName>(["basic", "posix", "owner"]);
 
-    public supportedFileAttributeViews (): Set<AttributeViewName> {
+    public supportedFileAttributeViews(): Set<AttributeViewName> {
         return LocalFileSystem.supportedFileAttributeViews;
     }
 
-    public getDefaultDirectory (): string {
+    public getDefaultDirectory(): string {
         return this.defaultDirectory;
     }
 
-    public getDefaultRoot (): string {
+    public getDefaultRoot(): string {
         return this.defaultRoot;
     }
 }
