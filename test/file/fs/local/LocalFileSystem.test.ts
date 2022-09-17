@@ -15,11 +15,20 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-/* A type that represents the type of local path. */
-export enum LocalPathType {
-  ABSOLUTE = "ABSOLUTE", //  C:\foo
-  UNC = "UNC", //  \\server\share\foo
-  RELATIVE = "RELATIVE", //  foo
-  DIRECTORY_RELATIVE = "DIRECTORY_RELATIVE", //  \foo
-  DRIVE_RELATIVE = "DRIVE_RELATIVE" //  C:foo
-}
+import {FileSystems} from "@filesystems/core/file";
+import {LocalFileSystemProvider} from "../../../../src";
+import {FileSystemProviders} from "@filesystems/core/file/spi";
+
+FileSystemProviders.register(new LocalFileSystemProvider());
+
+
+test("LocalFileSystem", async () => {
+    const fileSystem = await FileSystems.getFileSystem(new URL("file://"));
+    expect(fileSystem.isReadOnly()).toBeFalsy();
+    expect(fileSystem.isOpen()).toBeTruthy();
+});
+
+test("LocalFileSystemFileStore", async () => {
+    const fileSystem = await FileSystems.getFileSystem(new URL("file://"));
+    expect(await fileSystem.getFileStores()).toBeDefined();
+});

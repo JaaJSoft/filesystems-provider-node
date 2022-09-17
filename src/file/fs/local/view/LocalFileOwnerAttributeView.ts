@@ -64,9 +64,9 @@ export class LocalFileOwnerAttributeView implements FileOwnerAttributeView {
         }
     }
 
-    public async readAttributesByName(attributes: string[]): Promise<Map<string, Object>> {
-        const result = new Map<string, Object>();
-        for (let attribute of attributes) {
+    public async readAttributesByName(attributes: string[]): Promise<Map<string, unknown>> {
+        const result = new Map<string, unknown>();
+        for (const attribute of attributes) {
             if (attribute === "*" || attribute === LocalFileOwnerAttributeView.OWNER_NAME) {
                 result.set(LocalFileOwnerAttributeView.OWNER_NAME, this.getOwner());
             } else {
@@ -76,7 +76,7 @@ export class LocalFileOwnerAttributeView implements FileOwnerAttributeView {
         return result;
     }
 
-    public async setAttributeByName(attribute: string, value: Object): Promise<void> {
+    public async setAttributeByName(attribute: string, value: unknown): Promise<void> {
         if (attribute === LocalFileOwnerAttributeView.OWNER_NAME) {
             await this.setOwner(value as UserPrincipal);
         } else {

@@ -51,7 +51,6 @@ import {mapCopyOptionsToFlags, mapOpenOptionsToFlags} from "./Helper";
 
 /* It's a FileSystemProvider that provides a LocalFileSystem */
 export class LocalFileSystemProvider extends AbstractFileSystemProvider {
-
     private readonly theFileSystem: LocalFileSystem;
 
     public constructor() {
@@ -78,16 +77,19 @@ export class LocalFileSystemProvider extends AbstractFileSystemProvider {
 
     private checkURL(url: URL): void {
         const scheme = FileSystemProviders.cleanScheme(url.protocol);
-        if (scheme !== this.getScheme().toUpperCase())
+        if (scheme !== this.getScheme().toUpperCase()) {
             throw new IllegalArgumentException("URI does not match this provider");
+        }
         const path = url.pathname;
-        if (path == null)
+        if (path == null) {
             throw new IllegalArgumentException("Path component is undefined");
-        if (path !== "/")
+        }
+        if (path !== "/") {
             throw new IllegalArgumentException("Path component should be '/'");
+        }
     }
 
-    public async newFileSystemFromUrl(url: URL, env: Map<string, any>): Promise<FileSystem> {
+    public async newFileSystemFromUrl(url: URL, env: Map<string, unknown>): Promise<FileSystem> {
         this.checkURL(url);
         throw new FileSystemAlreadyExistsException();
     }
@@ -103,7 +105,7 @@ export class LocalFileSystemProvider extends AbstractFileSystemProvider {
     }
 
     private static start(path: Path, controller: WritableStreamDefaultController, options?: OpenOption[] | undefined): number {
-        let fd: number = -1;
+        let fd = -1;
         try {
             fd = fs.openSync(path.toString(), mapOpenOptionsToFlags(options)); // TODO options
         } catch (e) {
@@ -117,15 +119,15 @@ export class LocalFileSystemProvider extends AbstractFileSystemProvider {
     }
 
     protected newInputStreamImpl(path: Path, options?: OpenOption[]): ReadableStream<Uint8Array> {
-        let fd: number = -1;
+        let fd = -1;
         return new ReadableStream<Uint8Array>({
             start: controller => {
-                // @ts-ignore
+                // @ts-expect-error jeej
                 fd = LocalFileSystemProvider.start(path, controller, options);
             },
             pull: controller => {
                 try {
-                    let buffer: Uint8Array = new Uint8Array(LocalFileSystemProvider.BUFFER_SIZE);
+                    const buffer: Uint8Array = new Uint8Array(LocalFileSystemProvider.BUFFER_SIZE);
                     const bytesRead: number = fs.readSync(fd, buffer, 0, LocalFileSystemProvider.BUFFER_SIZE, null);
                     if (bytesRead > 0) {
                         controller.enqueue(buffer.slice(0, bytesRead));
@@ -141,10 +143,10 @@ export class LocalFileSystemProvider extends AbstractFileSystemProvider {
     }
 
     protected newOutputStreamImpl(path: Path, options?: OpenOption[]): WritableStream<Uint8Array> {
-        let fd: number = -1;
+        let fd = -1;
         return new WritableStream<Uint8Array>({
             start: controller => {
-                // @ts-ignore
+                // @ts-expect-error jeej
                 fd = LocalFileSystemProvider.start(path, controller, options);
             },
             write: (chunk, controller) => {
@@ -162,17 +164,21 @@ export class LocalFileSystemProvider extends AbstractFileSystemProvider {
         });
     }
 
-    public async createFile(path: Path, attrs?: FileAttribute<any>[]): Promise<void> {
+    public async createFile(path: Path, attrs?: Array<FileAttribute<unknown>>): Promise<void> {
         await fsAsync.writeFile(path.toString(), "");
-        if (attrs) {
-            attrs.forEach(value => this.setAttribute(path, value.name(), value.value()));
+        if (attrs != null) {
+            for (const value of attrs) {
+                await this.setAttribute(path, value.name(), value.value());
+            }
         }
     }
 
-    public async createDirectory(dir: Path, attrs?: FileAttribute<any>[]): Promise<void> {
+    public async createDirectory(dir: Path, attrs?: Array<FileAttribute<unknown>>): Promise<void> {
         await fsAsync.mkdir(dir.toString());
-        if (attrs) {
-            attrs.forEach(value => this.setAttribute(dir, value.name(), value.value()));
+        if (attrs != null) {
+            for (const value of attrs) {
+                await this.setAttribute(dir, value.name(), value.value());
+            }
         }
     }
 
@@ -187,14 +193,14 @@ export class LocalFileSystemProvider extends AbstractFileSystemProvider {
 
     public async checkAccess(obj: Path, modes?: AccessMode[]): Promise<void> { // TODO finish this
         const accessModesTocheck: AccessMode[] = [];
-        if (modes) {
+        if (modes != null) {
             accessModesTocheck.push(...modes);
         } else {
             accessModesTocheck.push(AccessMode.READ);
         }
         const path = obj.toString();
         try {
-            await Promise.all(accessModesTocheck.map(mode => {
+            await Promise.all(accessModesTocheck.map(async mode => {
                 switch (mode) {
                     case AccessMode.READ:
                         return fsAsync.access(path, fs.constants.R_OK);
@@ -207,7 +213,6 @@ export class LocalFileSystemProvider extends AbstractFileSystemProvider {
         } catch (err) {
             throw new AccessDeniedException(path);
         }
-
     }
 
     public async copy(source: Path, target: Path, options?: CopyOption[]): Promise<void> {
@@ -226,9 +231,10 @@ export class LocalFileSystemProvider extends AbstractFileSystemProvider {
     public async isHidden(obj: Path): Promise<boolean> {
         await this.checkAccess(obj);
         const name = obj.getFileName();
-        if (name == null)
+        if (name == null) {
             return false;
-        return name.startsWithStr(".");
+        }
+        return await name.startsWithStr(".");
     }
 
     public async isSameFile(obj1: Path, obj2: Path): Promise<boolean> {
@@ -257,7 +263,7 @@ export class LocalFileSystemProvider extends AbstractFileSystemProvider {
         switch (name) {
             case "basic":
             case "posix":
-                return (this.getFileAttributeView(path, name, options) as BasicFileAttributeView).readAttributes();
+                return await (this.getFileAttributeView(path, name, options) as BasicFileAttributeView).readAttributes();
             default:
                 throw new UnsupportedOperationException();
         }
@@ -276,5 +282,4 @@ export class LocalFileSystemProvider extends AbstractFileSystemProvider {
                 throw new UnsupportedOperationException();
         }
     }
-
 }

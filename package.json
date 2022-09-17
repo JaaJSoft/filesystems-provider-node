@@ -30,14 +30,19 @@
     "@babel/preset-typescript": "^7.16.5",
     "@types/jest": "^27.0.3",
     "@types/node": "^16.11.7",
-    "@typescript-eslint/eslint-plugin": "^5.36.2",
-    "@typescript-eslint/parser": "^5.36.2",
+    "@typescript-eslint/eslint-plugin": "^5.37.0",
+    "@typescript-eslint/parser": "^5.37.0",
     "babel-jest": "^27.5.1",
-    "eslint": "^8.23.0",
+    "eslint": "8.22.0",
+    "eslint-config-standard-with-typescript": "^23.0.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-n": "^15.2.5",
+    "eslint-plugin-promise": "^6.0.1",
     "jest": "^27.4.5",
     "typescript": "^4.8.3"
   },
   "dependencies": {
-    "@filesystems/core": "0.2.5"
+    "@filesystems/core": "0.2.8",
+    "drivelist": "^11.0.0"
   }
 }

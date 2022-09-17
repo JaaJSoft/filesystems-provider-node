@@ -51,7 +51,7 @@ export class LocalPath extends Path {
      * @returns A new LocalPath object.
      */
     public static parse(fileSystem: FileSystem, path: string): LocalPath {
-        let parse = pathFs.parse(path);
+        const parse = pathFs.parse(path);
         return LocalPath.pathFromJsPath(parse, fileSystem, LocalPathType.RELATIVE);
 
     }
@@ -62,11 +62,6 @@ export class LocalPath extends Path {
             throw new ProviderMismatchException();
         }
         return path;
-    }
-
-    // @ts-ignore
-    private emptyPath(): LocalPath {
-        return new LocalPath(this.getFileSystem(), LocalPathType.RELATIVE, "", "");
     }
 
     /**
@@ -180,7 +175,7 @@ export class LocalPath extends Path {
         }
 
         // roots match so compare elements
-        let thisCount = this.getNameCount();
+        const thisCount = this.getNameCount();
         let otherCount = other.getNameCount();
         if (otherCount <= thisCount) {
             while (--otherCount >= 0) {
@@ -358,7 +353,7 @@ export class LocalPath extends Path {
         return this.path.substring(this.offsets[i], this.offsets[i + 1] - 1);
     }
 
-    public valueOf(): Object { // TODO
+    public valueOf(): unknown { // TODO
         return this.path.valueOf();
     }
 }

@@ -37,7 +37,7 @@ export class LocalDirectoryStream implements DirectoryStream<Path> {
     public [Symbol.asyncIterator](): AsyncIterator<Path> {
         const pathIterator: IterableIterator<Path> = this.readDir(this.dir, this.acceptFilter)[Symbol.iterator]();
         return new class implements AsyncIterator<Path> {
-            public next(...args: [] | [undefined]): Promise<IteratorResult<Path, any>> {
+            public next(...args: [] | [undefined]): Promise<IteratorResult<Path>> {
                 return Promise.resolve(pathIterator.next(...args));
             }
         };
