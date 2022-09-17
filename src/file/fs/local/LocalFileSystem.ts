@@ -45,7 +45,7 @@ export class LocalFileSystem extends FileSystem {
 
     public async getFileStores(): Promise<Iterable<FileStore>> {
         const drives = await list();
-        return drives.map(value => LocalFileStore.create(value));
+        return drives.map(value => LocalFileStore.create(this, value));
     }
 
     public getPath(first: string, more?: string[]): Path {
@@ -72,8 +72,7 @@ export class LocalFileSystem extends FileSystem {
 
     public async getRootDirectories(): Promise<Iterable<Path>> {
         return [...(await this.getFileStores())]
-            .flatMap(fileStore => (fileStore as LocalFileStore).mountPoints())
-            .map(path => this.getPath(path));
+            .flatMap(fileStore => (fileStore as LocalFileStore).mountPoints());
     }
 
     public getSeparator(): string {

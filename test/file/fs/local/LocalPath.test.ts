@@ -29,10 +29,12 @@ import {
 import {ReadableStreamDefaultReadDoneResult, ReadableStreamDefaultReadValueResult, TextDecoderStream} from "stream/web";
 import {FileSystemProviders} from "@filesystems/core/file/spi";
 import {LocalFileSystemProvider} from "../../../../src";
+import {LocalFileStore} from "../../../../src/file/fs/local/LocalFileStore";
 
 FileSystemProviders.register(new LocalFileSystemProvider());
 
 const rootPath: Promise<Path> = Paths.of("/");
+const cPath: Promise<Path> = Paths.of("C:/");
 const currentPath: Promise<Path> = Paths.of(".");
 
 test("LocalPathRoot", async () => {
@@ -307,9 +309,29 @@ test("URL", async () => {
         expect((await Paths.ofURL(new URL("file:///"))).toURL().toString()).toEqual("file:///");
     }
 });
+
 test("URL2", async () => {
     if (os.platform() == "win32") {
         const url: string = (await Paths.of("c:/")).toURL().toString();
         expect((await Paths.ofURL(new URL(url))).equals(await Paths.of("c:/")));
+    }
+});
+
+test("LocalPathGetFileStore", async () => {
+    let path: Path;
+    if (os.platform() == "win32") {
+        path = await Paths.of("D:\\JAAJ8txt");
+    } else {
+        path = await Paths.of("/tmp/JAAJ8.txt");
+    }
+    await Files.deleteIfExists(path);
+    const fileStore: LocalFileStore = (await Files.getFileStore(path)) as LocalFileStore;
+    expect(fileStore.isReadOnly()).toBeFalsy();
+    if (os.platform() == "win32") {
+        const c: Path = await cPath;
+        expect(fileStore.mountPoints().some(async path => c.equals(path))).toBeTruthy();
+    } else {
+        const root: Path = await rootPath;
+        expect(fileStore.mountPoints().some(async path => root.equals(path))).toBeTruthy();
     }
 });

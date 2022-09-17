@@ -48,6 +48,7 @@ import {LocalBasicFileAttributesView, LocalFileOwnerAttributeView} from "./view"
 import {LocalPosixFileAttributeView} from "./view/LocalPosixFileAttributeView";
 import {ReadableStream, TextDecoderStream, TextEncoderStream, WritableStream} from "stream/web";
 import {mapCopyOptionsToFlags, mapOpenOptionsToFlags} from "./Helper";
+import {LocalFileStore} from "./LocalFileStore";
 
 /* It's a FileSystemProvider that provides a LocalFileSystem */
 export class LocalFileSystemProvider extends AbstractFileSystemProvider {
@@ -188,7 +189,26 @@ export class LocalFileSystemProvider extends AbstractFileSystemProvider {
     }
 
     public async getFileStore(path: Path): Promise<FileStore> {
-        throw new Error("Method not implemented.");
+        const fileSystem: FileSystem = path.getFileSystem();
+        const fileStoresPromise: Promise<Iterable<FileStore>> = fileSystem.getFileStores();
+        const absolutePath: Path = path.toAbsolutePath();
+        let mountPointPathFound: Path | null = null;
+        let fileStoreFound: FileStore | null = null;
+        const fileStores: Iterable<LocalFileStore> = (await fileStoresPromise) as Iterable<LocalFileStore>;
+        for (const currentFileStore of fileStores) {
+            for (const mountPointPath of currentFileStore.mountPoints()) {
+                if (absolutePath.startsWith(mountPointPath)) {
+                    if (!mountPointPathFound || mountPointPath.startsWith(mountPointPathFound)) {
+                        fileStoreFound = currentFileStore;
+                        mountPointPathFound = mountPointPath;
+                    }
+                }
+            }
+        }
+        if (!fileStoreFound) {
+            throw new IllegalArgumentException("Path does not have a FileStore");
+        }
+        return fileStoreFound;
     }
 
     public async checkAccess(obj: Path, modes?: AccessMode[]): Promise<void> { // TODO finish this

@@ -315,7 +315,7 @@ export class LocalPath extends Path {
 
     private static pathFromJsPath(path: pathFs.ParsedPath, fileSystem: FileSystem, pathType: LocalPathType) {// TODO check separator
         const newPath = path.dir.length > 1 && path.base.length !== 0 ? path.dir + fileSystem.getSeparator() + path.base : path.dir + path.base;
-        if (path.root === newPath) {
+        if (path.root === newPath || newPath.startsWith("/") || (newPath.length >= 3 && newPath.charAt(1) === ":")) {
             pathType = LocalPathType.ABSOLUTE;
         }
         return new LocalPath(fileSystem, pathType, path.root, newPath); // TODO set type

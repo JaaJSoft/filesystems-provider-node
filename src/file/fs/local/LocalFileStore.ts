@@ -17,9 +17,10 @@
 
 import {FileStore} from "@filesystems/core/file";
 import {FileStoreAttributeView} from "@filesystems/core/file/attribute/FileStoreAttributeView";
-import {AttributeViewName} from "@filesystems/core/file/attribute";
 import {UnsupportedOperationException} from "@filesystems/core/exception";
 import {Drive} from "drivelist";
+import {LocalPath} from "./LocalPath";
+import {LocalFileSystem} from "./LocalFileSystem";
 
 export class LocalFileStore implements FileStore {
     private readonly _name: string;
@@ -31,7 +32,7 @@ export class LocalFileStore implements FileStore {
     private readonly _readOnly: boolean;
     private readonly _removable: boolean;
     private readonly _isCdrom: boolean;
-    private readonly _mountPoints: string[];
+    private readonly _mountPoints: LocalPath[];
     private readonly _displayName: string;
     private readonly _system: boolean;
 
@@ -45,7 +46,7 @@ export class LocalFileStore implements FileStore {
         readOnly: boolean,
         removable: boolean,
         isCdrom: boolean,
-        mountPoints: string[],
+        mountPoints: LocalPath[],
         displayName: string,
         system: boolean,
     ) {
@@ -63,8 +64,21 @@ export class LocalFileStore implements FileStore {
         this._system = system;
     }
 
-    public static create(drive: Drive): LocalFileStore {
-        return new LocalFileStore(drive.device, drive.busType, BigInt(drive.blockSize), drive.size ? BigInt(drive.size) : 0n, 0n, 0n, drive.isReadOnly, drive.isRemovable, false, drive.mountpoints.map(value => value.path), drive.description, drive.isSystem);
+    public static create(fs: LocalFileSystem, drive: Drive): LocalFileStore {
+        return new LocalFileStore(
+            drive.device,
+            drive.busType,
+            BigInt(drive.blockSize),
+            drive.size ? BigInt(drive.size) : 0n,
+            0n,
+            0n,
+            drive.isReadOnly,
+            drive.isRemovable,
+            false,
+            drive.mountpoints.map(value => fs.getPath(value.path) as LocalPath),
+            drive.description,
+            drive.isSystem,
+        );
     }
 
     public name(): string {
@@ -103,7 +117,7 @@ export class LocalFileStore implements FileStore {
         return this._isCdrom;
     }
 
-    public mountPoints(): string[] {
+    public mountPoints(): LocalPath[] {
         return this._mountPoints;
     }
 
@@ -141,23 +155,18 @@ export class LocalFileStore implements FileStore {
     }
 
     public getFileStoreAttributeView(name: string): FileStoreAttributeView {
-        return new class implements FileStoreAttributeView {
-            public name(): AttributeViewName {
-                return "TOTO";
-            }
-
-            public readAttributesByName(attributes: string[]): Promise<Map<string, unknown>> {
-                return Promise.resolve(new Map<string, unknown>());
-            }
-
-            public setAttributeByName(attribute: string, value: unknown): Promise<void> {
-                return Promise.resolve(undefined);
-            }
-        };
+        throw new UnsupportedOperationException("no view supported"); // TODO View ?
     }
 
     public supportsFileAttributeView(name: string): boolean {
-        return false;
+        switch (name) {
+            case "basic":
+            case "owner":
+            case "posix":
+                return true;
+            default:
+                return false;
+        }
     }
 
     public toString(): string {
