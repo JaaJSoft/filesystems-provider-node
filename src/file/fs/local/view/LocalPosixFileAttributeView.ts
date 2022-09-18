@@ -69,7 +69,7 @@ export class LocalPosixFileAttributeView extends AbstractPosixFileAttributeView 
                 return basicFileAttributes.creationTime();
             }
 
-            public fileKey(): Object {
+            public fileKey(): unknown {
                 return basicFileAttributes.fileKey();
             }
 

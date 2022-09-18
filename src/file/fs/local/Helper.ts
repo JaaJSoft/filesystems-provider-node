@@ -29,7 +29,7 @@ export function convertPermissionsToPosix(perms: Iterable<PosixFilePermission>):
     let owner = 0;
     let group = 0;
     let others = 0;
-    for (let perm of perms) {
+    for (const perm of perms) {
         if (perm === PosixFilePermission.OWNER_READ) {
             owner += 4;
         } else if (perm === PosixFilePermission.OWNER_WRITE) {
@@ -54,7 +54,7 @@ export function convertPermissionsToPosix(perms: Iterable<PosixFilePermission>):
 }
 
 export function mapOpenOptionsToFlags(options: OpenOption[] = [StandardOpenOption.READ]): number {
-    let flags: number[] = options.flatMap(value => {
+    const flags: number[] = options.flatMap(value => {
         switch (value) {
             case StandardOpenOption.READ:
                 return [fs.constants.O_RDONLY];
@@ -85,7 +85,7 @@ export function mapOpenOptionsToFlags(options: OpenOption[] = [StandardOpenOptio
 }
 
 export function mapCopyOptionsToFlags(options: CopyOption[] = [StandardCopyOption.COPY_ATTRIBUTES]): number {
-    let flags: number[] = [];
+    const flags: number[] = [];
     if (!options.includes(StandardCopyOption.REPLACE_EXISTING)) {
         flags.push(fs.constants.COPYFILE_EXCL);
     }

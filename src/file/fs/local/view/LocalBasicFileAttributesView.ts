@@ -59,7 +59,7 @@ export class LocalBasicFileAttributesView extends AbstractBasicFileAttributeView
                 return FileTime.fromMillis(Number(stats.birthtimeMs));
             }
 
-            public fileKey(): Object {
+            public fileKey(): unknown {
                 return stats.dev + stats.ino;
             }
 

@@ -18,7 +18,6 @@
 import {UserPrincipal} from "@filesystems/core/file/attribute";
 import {Principal} from "@filesystems/core";
 
-
 export class LocalUserPrincipal implements UserPrincipal {
     private readonly accountName: string | null;
     private readonly uid: number;
@@ -36,9 +35,8 @@ export class LocalUserPrincipal implements UserPrincipal {
     }
 
     public getName(): string {
-        return this.accountName ? this.accountName : this.uid.toString();
+        return (this.accountName != null) ? this.accountName : this.uid.toString();
     }
-
 
     public getUid(): number {
         return this.uid;

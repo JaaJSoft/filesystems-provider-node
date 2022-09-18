@@ -29,10 +29,12 @@ import {
 import {ReadableStreamDefaultReadDoneResult, ReadableStreamDefaultReadValueResult, TextDecoderStream} from "stream/web";
 import {FileSystemProviders} from "@filesystems/core/file/spi";
 import {LocalFileSystemProvider} from "../../../../src";
+import {LocalFileStore} from "../../../../src/file/fs/local/LocalFileStore";
 
 FileSystemProviders.register(new LocalFileSystemProvider());
 
 const rootPath: Promise<Path> = Paths.of("/");
+const cPath: Promise<Path> = Paths.of("C:/");
 const currentPath: Promise<Path> = Paths.of(".");
 
 test("LocalPathRoot", async () => {
@@ -90,7 +92,7 @@ test("LocalPathNewImputStream", async () => {
 
     const reader: ReadableStreamDefaultReader<string> = textDecoderStream.readable.getReader();
     let done = false;
-    let output: string = "";
+    let output = "";
     while (!done) {
         const v: ReadableStreamDefaultReadValueResult<string> | ReadableStreamDefaultReadDoneResult = await reader.read();
         done = v.done;
@@ -114,7 +116,7 @@ test("LocalPathNewBufferedReader", async () => {
     const readableStream: ReadableStream<string> = await Files.newBufferedReader(path);
     const reader: ReadableStreamDefaultReader<string> = readableStream.getReader();
     let done = false;
-    let output: string = "";
+    let output = "";
     while (!done) {
         const v: ReadableStreamDefaultReadValueResult<string> | ReadableStreamDefaultReadDoneResult = await reader.read();
         done = v.done;
@@ -217,7 +219,7 @@ test("LocalPathDirectoryStream", async () => {
         path = await Paths.of("C:\\Users");
         const ds: DirectoryStream<Path> = await Files.newDirectoryStream(path, p => p ? p.toString().endsWith(".ini") : false);
         const files = [];
-        for await (let d of ds) {
+        for await (const d of ds) {
             files.push(d);
         }
         expect(files.length).toEqual(1);
@@ -253,14 +255,14 @@ test("LocalPathSetBasicAttributes", async () => {
     }
     await Files.deleteIfExists(path);
     await Files.writeBytes(path, Uint8Array.of(1, 2, 3, 4));
-    const attributes: Map<string, Object> = await Files.readAttributes(path, "size");
+    const attributes: Map<string, unknown> = await Files.readAttributes(path, "size");
     expect(attributes.get("size")).toEqual(4n);
-    const basicAttributes: Map<string, Object> = await Files.readAttributes(path, "basic:size");
+    const basicAttributes: Map<string, unknown> = await Files.readAttributes(path, "basic:size");
     expect(basicAttributes.get("size")).toEqual(4n);
-    const posixAttributes: Map<string, Object> = await Files.readAttributes(path, "posix:size");
+    const posixAttributes: Map<string, unknown> = await Files.readAttributes(path, "posix:size");
     expect(posixAttributes.get("size")).toEqual(4n);
     await Files.setAttribute(path, "posix:lastModifiedTime", FileTime.fromMillis(0));
-    const posixAttributes2: Map<string, Object> = await Files.readAttributes(path, "posix:lastModifiedTime");
+    const posixAttributes2: Map<string, unknown> = await Files.readAttributes(path, "posix:lastModifiedTime");
     expect((posixAttributes2.get("lastModifiedTime") as FileTime).toMillis()).toEqual(0);
     await Files.deleteIfExists(path);
 });
@@ -307,9 +309,29 @@ test("URL", async () => {
         expect((await Paths.ofURL(new URL("file:///"))).toURL().toString()).toEqual("file:///");
     }
 });
+
 test("URL2", async () => {
     if (os.platform() == "win32") {
         const url: string = (await Paths.of("c:/")).toURL().toString();
         expect((await Paths.ofURL(new URL(url))).equals(await Paths.of("c:/")));
+    }
+});
+
+test("LocalPathGetFileStore", async () => {
+    let path: Path;
+    if (os.platform() == "win32") {
+        path = await Paths.of("D:\\JAAJ8txt");
+    } else {
+        path = await Paths.of("/tmp/JAAJ8.txt");
+    }
+    await Files.deleteIfExists(path);
+    const fileStore: LocalFileStore = (await Files.getFileStore(path)) as LocalFileStore;
+    expect(fileStore.isReadOnly()).toBeFalsy();
+    if (os.platform() == "win32") {
+        const c: Path = await cPath;
+        expect(fileStore.mountPoints().some(async path => c.equals(path))).toBeTruthy();
+    } else {
+        const root: Path = await rootPath;
+        expect(fileStore.mountPoints().some(async path => root.equals(path))).toBeTruthy();
     }
 });

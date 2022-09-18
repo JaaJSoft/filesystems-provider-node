@@ -23,15 +23,17 @@ import {FileStore, FileSystem, Path, PathMatcher} from "@filesystems/core/file";
 import {Objects} from "@filesystems/core/utils";
 import {LocalPath} from "./LocalPath";
 import {AttributeViewName, UserPrincipalLookupService} from "@filesystems/core/file/attribute";
+import {list} from "drivelist";
+import {LocalFileStore} from "./LocalFileStore";
 
 export class LocalFileSystem extends FileSystem {
-    private readonly fileSystem: FileSystemProvider;
+    private readonly fsProvider: FileSystemProvider;
     private readonly defaultDirectory: string;
     private readonly defaultRoot: string;
 
     public constructor(provider: LocalFileSystemProvider, dir: string) {
         super();
-        this.fileSystem = provider;
+        this.fsProvider = provider;
         const parsedPath: jsPath.ParsedPath = jsPath.parse(dir);
         this.defaultDirectory = parsedPath.dir;
         this.defaultRoot = parsedPath.root;
@@ -41,20 +43,22 @@ export class LocalFileSystem extends FileSystem {
         throw new UnsupportedOperationException();
     }
 
-    public getFileStores(): Iterable<FileStore> {
-        throw new Error("Method not implemented.");
+    public async getFileStores(): Promise<Iterable<FileStore>> {
+        const drives = await list();
+        return drives.map(value => LocalFileStore.create(this, value));
     }
 
     public getPath(first: string, more?: string[]): Path {
         Objects.requireNonNullUndefined(first);
-        let path: string = "";
-        if (!more || more.length === 0) {
+        let path = "";
+        if ((more == null) || more.length === 0) {
             path = first;
         } else {
             for (const segment of more) {
                 if (segment.length !== 0) {
-                    if (path.length > 0)
+                    if (path.length > 0) {
                         path += this.getSeparator();
+                    }
                     path += segment;
                 }
             }
@@ -66,12 +70,9 @@ export class LocalFileSystem extends FileSystem {
         throw new Error("Method not implemented.");
     }
 
-    public getRootDirectories(): Iterable<Path> { // TODO find a better way
-        const path = this.getPath("/");
-        if (path) {
-            return [path];
-        }
-        return [];
+    public async getRootDirectories(): Promise<Iterable<Path>> {
+        return [...(await this.getFileStores())]
+            .flatMap(fileStore => (fileStore as LocalFileStore).mountPoints());
     }
 
     public getSeparator(): string {
@@ -91,7 +92,7 @@ export class LocalFileSystem extends FileSystem {
     }
 
     public provider(): FileSystemProvider {
-        return this.fileSystem;
+        return this.fsProvider;
     }
 
     private static readonly supportedFileAttributeViews: Set<AttributeViewName> = new Set<AttributeViewName>(["basic", "posix", "owner"]);
@@ -99,7 +100,6 @@ export class LocalFileSystem extends FileSystem {
     public supportedFileAttributeViews(): Set<AttributeViewName> {
         return LocalFileSystem.supportedFileAttributeViews;
     }
-
 
     public getDefaultDirectory(): string {
         return this.defaultDirectory;
