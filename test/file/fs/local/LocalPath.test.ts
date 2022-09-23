@@ -326,7 +326,7 @@ test("LocalPathGetFileStore", async () => {
     }
     await Files.deleteIfExists(path);
     const roots: Path[] = [...await path.getFileSystem().getRootDirectories()];
-    if (roots.some(async value => value.equals(await rootPath))) {
+    if (roots.some(async value => value.toString() === "/" || value.toString().toUpperCase() === "C:/")) {
         const fileStore: LocalFileStore = (await Files.getFileStore(path)) as LocalFileStore;
         expect(fileStore.isReadOnly()).toBeFalsy();
         if (os.platform() == "win32") {
@@ -340,4 +340,12 @@ test("LocalPathGetFileStore", async () => {
         console.warn("Does not have a root ?");
     }
 
+});
+
+test("LocalPathEquals", async () => {
+    const tmpPath = await Paths.of("/tmp");
+    expect((await rootPath).equals(await rootPath)).toBeTruthy();
+    expect((await rootPath).equals(tmpPath)).toBeFalsy();
+    expect((await rootPath).equals(await cPath)).toBeFalsy();
+    expect((await rootPath).equals((await tmpPath).getParent())).toBeTruthy();
 });
