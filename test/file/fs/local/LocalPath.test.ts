@@ -326,6 +326,7 @@ test("LocalPathGetFileStore", async () => {
     }
     await Files.deleteIfExists(path);
     const roots: Path[] = [...await path.getFileSystem().getRootDirectories()];
+    console.log(roots);
     if (roots.some(async value => value.toString() === "/" || value.toString().toUpperCase() === "C:/")) {
         const fileStore: LocalFileStore = (await Files.getFileStore(path)) as LocalFileStore;
         expect(fileStore.isReadOnly()).toBeFalsy();
