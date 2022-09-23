@@ -192,7 +192,6 @@ export class LocalFileSystemProvider extends AbstractFileSystemProvider {
         const fileSystem: FileSystem = path.getFileSystem();
         const fileStoresPromise: Promise<Iterable<FileStore>> = fileSystem.getFileStores();
         const absolutePath: Path = path.toAbsolutePath();
-        console.log(absolutePath);
         let mountPointPathFound: Path | null = null;
         let fileStoreFound: FileStore | null = null;
         const fileStores: Iterable<LocalFileStore> = (await fileStoresPromise) as Iterable<LocalFileStore>;
