@@ -45,7 +45,7 @@ export class LocalFileSystem extends FileSystem {
 
     public async getFileStores(): Promise<Iterable<FileStore>> {
         const drives = await list();
-        console.log(drives);
+        console.log(drives.flatMap(value => value.mountpoints));
         return drives.map(value => LocalFileStore.create(this, value));
     }
 
