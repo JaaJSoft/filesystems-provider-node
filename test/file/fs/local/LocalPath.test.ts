@@ -286,7 +286,7 @@ test("LocalPathReadPosixAttributes", async () => {
         expect(permissions).toContain(PosixFilePermission.OWNER_READ);
         expect(permissions).toContain(PosixFilePermission.OWNER_WRITE);
     }
-    Files.deleteIfExists(path);
+    await Files.deleteIfExists(path);
 });
 
 
@@ -327,6 +327,7 @@ test("LocalPathGetFileStore", async () => {
     await Files.deleteIfExists(path);
     const fileStore: LocalFileStore = (await Files.getFileStore(path)) as LocalFileStore;
     expect(fileStore.isReadOnly()).toBeFalsy();
+    console.log(fileStore.mountPoints());
     if (os.platform() == "win32") {
         const c: Path = await cPath;
         expect(fileStore.mountPoints().some(async path => c.equals(path))).toBeTruthy();
