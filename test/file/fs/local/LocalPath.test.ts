@@ -325,13 +325,19 @@ test("LocalPathGetFileStore", async () => {
         path = await Paths.of("/tmp/JAAJ8.txt");
     }
     await Files.deleteIfExists(path);
-    const fileStore: LocalFileStore = (await Files.getFileStore(path)) as LocalFileStore;
-    expect(fileStore.isReadOnly()).toBeFalsy();
-    if (os.platform() == "win32") {
-        const c: Path = await cPath;
-        expect(fileStore.mountPoints().some(async path => c.equals(path))).toBeTruthy();
+    const roots: Path[] = [...await path.getFileSystem().getRootDirectories()];
+    if (roots.some(async value => value.equals(await rootPath))) {
+        const fileStore: LocalFileStore = (await Files.getFileStore(path)) as LocalFileStore;
+        expect(fileStore.isReadOnly()).toBeFalsy();
+        if (os.platform() == "win32") {
+            const c: Path = await cPath;
+            expect(fileStore.mountPoints().some(async path => c.equals(path))).toBeTruthy();
+        } else {
+            const root: Path = await rootPath;
+            expect(fileStore.mountPoints().some(async path => root.equals(path))).toBeTruthy();
+        }
     } else {
-        const root: Path = await rootPath;
-        expect(fileStore.mountPoints().some(async path => root.equals(path))).toBeTruthy();
+        console.warn("Does not have a root ?");
     }
+
 });
