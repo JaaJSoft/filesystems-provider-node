@@ -308,7 +308,7 @@ export class LocalPath extends Path {
 
     public equals(other: Path): boolean {
         if (other && (other instanceof LocalPath)) {
-            return this.compareTo((other as Path)) == 0;
+            return this.compareTo(other) === 0;
         }
         return false;
     }

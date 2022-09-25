@@ -71,8 +71,8 @@ export class LocalFileSystem extends FileSystem {
     }
 
     public async getRootDirectories(): Promise<Iterable<Path>> {
-        return [...(await this.getFileStores())]
-            .flatMap(fileStore => (fileStore as LocalFileStore).mountPoints());
+        return new Set<Path>([...(await this.getFileStores())]
+            .flatMap(fileStore => (fileStore as LocalFileStore).mountPoints()));
     }
 
     public getSeparator(): string {
