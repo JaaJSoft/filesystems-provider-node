@@ -286,7 +286,7 @@ test("LocalPathReadPosixAttributes", async () => {
         expect(permissions).toContain(PosixFilePermission.OWNER_READ);
         expect(permissions).toContain(PosixFilePermission.OWNER_WRITE);
     }
-    Files.deleteIfExists(path);
+    await Files.deleteIfExists(path);
 });
 
 
@@ -321,17 +321,22 @@ test("LocalPathGetFileStore", async () => {
     let path: Path;
     if (os.platform() == "win32") {
         path = await Paths.of("D:\\JAAJ8txt");
-    } else {
-        path = await Paths.of("/tmp/JAAJ8.txt");
+        const roots: Path[] = [...await path.getFileSystem().getRootDirectories()];
+        if (roots.some(async value => value.toString() === "/" || value.toString().toUpperCase() === "C:/")) {
+            const fileStore: LocalFileStore = (await Files.getFileStore(path)) as LocalFileStore;
+            expect(fileStore.isReadOnly()).toBeFalsy();
+            const c: Path = await cPath;
+            expect(fileStore.mountPoints().some(async path => c.equals(path))).toBeTruthy();
+        } else {
+            console.warn("Does not have a root ?");
+        }
     }
-    await Files.deleteIfExists(path);
-    const fileStore: LocalFileStore = (await Files.getFileStore(path)) as LocalFileStore;
-    expect(fileStore.isReadOnly()).toBeFalsy();
-    if (os.platform() == "win32") {
-        const c: Path = await cPath;
-        expect(fileStore.mountPoints().some(async path => c.equals(path))).toBeTruthy();
-    } else {
-        const root: Path = await rootPath;
-        expect(fileStore.mountPoints().some(async path => root.equals(path))).toBeTruthy();
-    }
+});
+
+test("LocalPathEquals", async () => {
+    const tmpPath = await Paths.of("/tmp");
+    expect((await rootPath).equals(await rootPath)).toBeTruthy();
+    expect((await rootPath).equals(tmpPath)).toBeFalsy();
+    expect((await rootPath).equals(await cPath)).toBeFalsy();
+    expect((await rootPath).equals((await tmpPath).getParent())).toBeTruthy();
 });
