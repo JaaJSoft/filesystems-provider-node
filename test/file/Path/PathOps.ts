@@ -16,24 +16,88 @@
  */
 
 
-import {Path} from "@filesystems/core/file";
+import {FileSystems, Path} from "@filesystems/core/file";
+import {Objects} from "@filesystems/core/utils";
 
-describe("PathOps", () => {
-    let path: Path;
 
-    function fail(): void {
-        throw new Error("PathOps failed");
-    }
+class PathOps {
+    private _path: Path | undefined | null;
+    private exc: unknown | undefined | null;
 
-    function checkPath(): void {
-        if (!path) {
-            throw new Error("path is null or undefined");
+    public static async init(first: string, more?: [string]): Promise<PathOps> {
+        console.log();
+        const pathOps = new PathOps();
+        try {
+            pathOps._path = (await FileSystems.getDefault()).getPath(first, more);
+            console.log("%s -> %s", first, pathOps._path.toString());
+        } catch (e) {
+            pathOps.exc = e;
+            console.log("%s -> %s", first, e);
         }
+        return pathOps;
     }
 
-    function check(result: any, expected: string) {
+    path(): Path {
+        return this._path;
+    }
+
+    checkPath(): void {
+        expect(this._path).toBeDefined();
+    }
+
+    check(result: Path | null | undefined, expected: string) {
+        if (Objects.isNullUndefined(result)) {
+            if (Objects.isNullUndefined(expected)) {
+                return;
+            }
+        } else {
+            expect(Objects.nonNullUndefined(expected)).toBeTruthy();
+            expect(Objects.nonNullUndefined(result)).toBeTruthy();
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            expect(result.toString() === expected.toString());
+        }
 
     }
 
-    expect();
+    root(expected: string): PathOps {
+        this.checkPath();
+        this.check(this._path.getRoot(), expected);
+        return this;
+    }
+
+    hasRoot(): PathOps {
+        this.checkPath();
+        expect(Objects.nonNullUndefined(this.path().getRoot())).toBeTruthy();
+        return this;
+    }
+
+    parent(expected: string): PathOps {
+        this.checkPath();
+        this.check(this.path().getParent(), expected);
+        return this;
+    }
+
+    name(expected: string): PathOps {
+        this.checkPath();
+        this.check(this.path().getFileName(), expected);
+        return this;
+    }
+
+    element(index: number, expected: string): PathOps {
+        this.checkPath();
+        this.check(this.path().getName(index), expected);
+        return this;
+    }
+
+    starts(startIndex: number, endIndex: number, expected: string): PathOps {
+        this.checkPath();
+        this.check(this.path().subpath(startIndex, endIndex), expected);
+        return this;
+    }
+}
+
+describe("windows", async () => {
+    const pathOps: PathOps = await PathOps.init("AAA");
+    pathOps.hasRoot();
 });
