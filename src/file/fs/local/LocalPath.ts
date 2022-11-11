@@ -314,11 +314,15 @@ export class LocalPath extends Path {
     }
 
     private static pathFromJsPath(path: pathFs.ParsedPath, fileSystem: FileSystem, pathType: LocalPathType) {// TODO check separator
-        const newPath = path.dir.length > 1 && path.base.length !== 0 ? path.dir + fileSystem.getSeparator() + path.base : path.dir + path.base;
+        const separator: string = fileSystem.getSeparator();
+        const dir: string = path.dir.replace(separator + separator, separator);
+        const base: string = path.base;
+        const root: string = path.root.replace(separator + separator, separator);
+        const newPath = dir.endsWith(separator) ? dir + base : dir + separator + base;
         if (path.root === newPath || newPath.startsWith("/") || (newPath.length >= 3 && newPath.charAt(1) === ":")) {
             pathType = LocalPathType.ABSOLUTE;
         }
-        return new LocalPath(fileSystem, pathType, path.root, newPath); // TODO set type
+        return new LocalPath(fileSystem, pathType, root, newPath); // TODO set type
     }
 
     // generate offset array
@@ -329,10 +333,11 @@ export class LocalPath extends Path {
                 // empty path considered to have one name element
                 list.push(0);
             } else {
+                const separator: string = this.fileSystem.getSeparator();
                 let start = this.root.length;
                 let off = this.root.length;
                 while (off < this.path.length) {
-                    if (this.path.charAt(off) !== this.fileSystem.getSeparator()) {
+                    if (this.path.charAt(off) !== separator) {
                         off++;
                     } else {
                         list.push(start);
@@ -343,7 +348,7 @@ export class LocalPath extends Path {
                     list.push(start);
             }
             if (!this.offsets)
-                return list;
+                this.offsets = list;
 
         }
         return this.offsets;

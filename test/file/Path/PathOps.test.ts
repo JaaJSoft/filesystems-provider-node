@@ -59,8 +59,8 @@ class PathOps {
                 return;
             }
         } else {
-            expect(Objects.nonNullUndefined(expected)).toBeTruthy();
-            expect(Objects.nonNullUndefined(result)).toBeTruthy();
+            expect(Objects.isNullUndefined(expected)).toBeFalsy();
+            expect(Objects.isNullUndefined(result)).toBeFalsy();
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
             expect(result.toString() === expected.toString());

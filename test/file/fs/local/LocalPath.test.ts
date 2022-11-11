@@ -340,3 +340,12 @@ test("LocalPathEquals", async () => {
     expect((await rootPath).equals(await cPath)).toBeFalsy();
     expect((await rootPath).equals((await tmpPath).getParent())).toBeTruthy();
 });
+
+
+test("LocalPathParsing", async () => {
+    expect((await Paths.of("C:\\foo\\bar")).toString()).toBe("C:\\foo\\bar");
+    expect((await Paths.of("C:/")).toString()).toBe("C:/");
+    expect((await Paths.of("C:/foo/bar")).toString()).toBe("C:/foo/bar");
+    expect((await Paths.of("C:\\")).toString()).toBe("C:/");
+    expect((await Paths.of("\\toto")).toString()).toBe("\\toto");
+});
