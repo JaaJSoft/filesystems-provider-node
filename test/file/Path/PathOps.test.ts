@@ -30,7 +30,7 @@ class PathOps {
     private fs: FileSystem | undefined;
 
     public static async init(first: string, more?: string[]): Promise<PathOps> {
-        FileSystemProviders.register(new LocalFileSystemProvider());
+        await FileSystemProviders.register(new LocalFileSystemProvider());
         const pathOps = new PathOps();
         pathOps.fs = await FileSystems.getDefault();
         try {
