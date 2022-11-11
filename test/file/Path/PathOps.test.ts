@@ -30,7 +30,6 @@ class PathOps {
     private fs: FileSystem | undefined;
 
     public static async init(first: string, more?: string[]): Promise<PathOps> {
-        console.log();
         FileSystemProviders.register(new LocalFileSystemProvider());
         const pathOps = new PathOps();
         pathOps.fs = await FileSystems.getDefault();
@@ -54,7 +53,7 @@ class PathOps {
         return this.fs as FileSystem;
     }
 
-    check(result: Path | null | undefined, expected: string) {
+    check(result: Path | null | undefined, expected: string | null) {
         if (Objects.isNullUndefined(result)) {
             if (Objects.isNullUndefined(expected)) {
                 return;
@@ -69,7 +68,7 @@ class PathOps {
 
     }
 
-    root(expected: string): PathOps {
+    root(expected: string | null): PathOps {
         const p = this.checkPath();
         this.check(p.getRoot(), expected);
         return this;
@@ -81,13 +80,13 @@ class PathOps {
         return this;
     }
 
-    parent(expected: string): PathOps {
+    parent(expected: string | null): PathOps {
         const p: Path = this.checkPath();
         this.check(p.getParent(), expected);
         return this;
     }
 
-    name(expected: string): PathOps {
+    name(expected: string | null): PathOps {
         const p: Path = this.checkPath();
         this.check(p.getFileName(), expected);
         return this;
@@ -232,6 +231,102 @@ describe("windows", () => {
                 .string("C:\\");
             (await PathOps.test("", ["foo", "", "bar", "", "\\gus"]))
                 .string("foo\\bar\\gus");
+        });
+
+        test("all components present", async () => {
+            (await PathOps.test("C:\\a\\b\\c"))
+                .root("C:\\")
+                .parent("C:\\a\\b")
+                .name("c");
+            (await PathOps.test("C:a\\b\\c"))
+                .root("C:")
+                .parent("C:a\\b")
+                .name("c");
+            (await PathOps.test("\\\\server\\share\\a"))
+                .root("\\\\server\\share\\")
+                .parent("\\\\server\\share\\")
+                .name("a");
+        });
+
+        test("root component only", async () => {
+            (await PathOps.test("C:\\"))
+                .root("C:\\")
+                .parent(null)
+                .name(null);
+            (await PathOps.test("C:"))
+                .root("C:")
+                .parent(null)
+                .name(null);
+            (await PathOps.test("\\\\server\\share\\"))
+                .root("\\\\server\\share\\")
+                .parent(null)
+                .name(null);
+        });
+
+        test("no root component", async () => {
+            (await PathOps.test("a\\b"))
+                .root(null)
+                .parent("a")
+                .name("b");
+        });
+
+        test("name component only", async () => {
+            (await PathOps.test("foo"))
+                .root(null)
+                .parent(null)
+                .name("foo");
+            (await PathOps.test(""))
+                .root(null)
+                .parent(null)
+                .name("");
+        });
+
+        test("startsWith", async () => {
+            (await PathOps.test("C:\\"))
+                .starts("C:\\")
+                .starts("c:\\")
+                .notStarts("C")
+                .notStarts("C:")
+                .notStarts("");
+            (await PathOps.test("C:"))
+                .starts("C:")
+                .starts("c:")
+                .notStarts("C")
+                .notStarts("");
+            (await PathOps.test("\\"))
+                .starts("\\");
+            (await PathOps.test("C:\\foo\\bar"))
+                .starts("C:\\")
+                .starts("C:\\foo")
+                .starts("C:\\FOO")
+                .starts("C:\\foo\\bar")
+                .starts("C:\\Foo\\Bar")
+                .notStarts("C:")
+                .notStarts("C")
+                .notStarts("C:foo")
+                .notStarts("");
+            (await PathOps.test("\\foo\\bar"))
+                .starts("\\")
+                .starts("\\foo")
+                .starts("\\foO")
+                .starts("\\foo\\bar")
+                .starts("\\fOo\\BaR")
+                .notStarts("foo")
+                .notStarts("foo\\bar")
+                .notStarts("");
+            (await PathOps.test("foo\\bar"))
+                .starts("foo")
+                .starts("foo\\bar")
+                .notStarts("\\")
+                .notStarts("");
+            (await PathOps.test("\\\\server\\share"))
+                .starts("\\\\server\\share")
+                .starts("\\\\server\\share\\")
+                .notStarts("\\")
+                .notStarts("");
+            (await PathOps.test(""))
+                .starts("")
+                .notStarts("\\");
         });
     }
 });

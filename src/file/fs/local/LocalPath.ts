@@ -351,7 +351,7 @@ export class LocalPath extends Path {
 
     private elementAsString(i: number): string {
         this.offsets = this.initOffsets();
-        if (i == (this.offsets.length - 1))
+        if (i === (this.offsets.length - 1))
             return this.path.substring(this.offsets[i]);
         return this.path.substring(this.offsets[i], this.offsets[i + 1] - 1);
     }
