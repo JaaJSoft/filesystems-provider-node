@@ -295,7 +295,11 @@ test("path", async () => {
     expect((await Paths.of(".")).isAbsolute()).toBeFalsy();
     expect((await Paths.of(".")).toString()).toEqual(".");
     expect((await Paths.of(".")).toAbsolutePath().isAbsolute()).toBeTruthy();
-    expect((await Paths.of("/")).toString()).toEqual("/");
+    if (os.platform() == "win32") {
+        expect((await Paths.of("/")).toString()).toEqual("\\");
+    } else {
+        expect((await Paths.of("/")).toString()).toEqual("/");
+    }
     expect((await Paths.of("/")).toRealPath().isAbsolute()).toBeTruthy();
 });
 
@@ -343,9 +347,11 @@ test("LocalPathEquals", async () => {
 
 
 test("LocalPathParsing", async () => {
-    expect((await Paths.of("C:\\foo\\bar")).toString()).toBe("C:\\foo\\bar");
-    expect((await Paths.of("C:/")).toString()).toBe("C:/");
-    expect((await Paths.of("C:/foo/bar")).toString()).toBe("C:/foo/bar");
-    expect((await Paths.of("C:\\")).toString()).toBe("C:/");
-    expect((await Paths.of("\\toto")).toString()).toBe("\\toto");
+    if (os.platform() == "win32") {
+        expect((await Paths.of("C:\\foo\\bar")).toString()).toBe("C:\\foo\\bar");
+        expect((await Paths.of("C:/")).toString()).toBe("C:\\");
+        expect((await Paths.of("C:/foo/bar")).toString()).toBe("C:\\foo\\bar");
+        expect((await Paths.of("C:\\")).toString()).toBe("C:\\");
+        expect((await Paths.of("\\toto")).toString()).toBe("\\toto");
+    }
 });

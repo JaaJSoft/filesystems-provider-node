@@ -23,6 +23,7 @@ import {ProviderMismatchException} from "@filesystems/core/file/exception";
 import {Objects} from "@filesystems/core/utils";
 import * as pathFs from "path";
 import {IllegalArgumentException} from "@filesystems/core/exception";
+import os from "os";
 
 /* `LocalPath` is a class that represents a path on the local file system. */
 export class LocalPath extends Path {
@@ -144,7 +145,14 @@ export class LocalPath extends Path {
     }
 
     public relativize(other: Path): Path {
-        return LocalPath.parse(this.fileSystem, pathFs.relative(this.toString(), other.toString()));
+        let s: string;
+        try {
+            s = pathFs.relative(this.toString(), other.toString());
+        } catch (e) {
+            throw new IllegalArgumentException();
+        }
+        return LocalPath.parse(this.fileSystem, s);
+
     }
 
     public resolve(other: Path): Path {
@@ -158,6 +166,8 @@ export class LocalPath extends Path {
         } catch (e) {
             if (e instanceof ProviderMismatchException) {
                 return false;
+            } else {
+                throw e;
             }
         }
         if (!other) {
@@ -173,7 +183,9 @@ export class LocalPath extends Path {
         if (other.isEmpty()) {
             return this.isEmpty();
         }
-
+        if (this.equals(other)) {
+            return true;
+        }
         // roots match so compare elements
         const thisCount = this.getNameCount();
         let otherCount = other.getNameCount();
@@ -313,13 +325,31 @@ export class LocalPath extends Path {
         return false;
     }
 
-    private static pathFromJsPath(path: pathFs.ParsedPath, fileSystem: FileSystem, pathType: LocalPathType) {// TODO check separator
+    private static cleanSeparator(path: string): string {
+        if (os.platform() === "win32") {
+            return path.replaceAll("/", "\\");
+        } else {
+            return path.replaceAll("\\", "/");
+        }
+    }
+
+    private static pathFromJsPath(path: pathFs.ParsedPath, fileSystem: FileSystem, pathType: LocalPathType) {// TODO refactor
         const separator: string = fileSystem.getSeparator();
-        const dir: string = path.dir.replace(separator + separator, separator);
+        const dir: string = this.cleanSeparator(path.dir);
         const base: string = path.base;
-        const root: string = path.root.replace(separator + separator, separator);
-        const newPath = dir.endsWith(separator) ? dir + base : dir + separator + base;
-        if (path.root === newPath || newPath.startsWith("/") || (newPath.length >= 3 && newPath.charAt(1) === ":")) {
+        let root: string = this.cleanSeparator(path.root);
+        let newPath = dir.endsWith(separator) || base.length === 0 || dir.length === 0 ? dir + base : dir + separator + base;
+        if (root.toUpperCase() !== newPath.toUpperCase() && newPath.endsWith(separator)) {
+            newPath = newPath.substring(0, newPath.length - 1);
+        } else if (root.toUpperCase() === newPath.toUpperCase() && root.length > 2 && !newPath.endsWith(separator)) {
+            newPath += separator;
+            if (!root.endsWith(separator)) {
+                root += separator;
+            }
+        }
+        if (newPath.startsWith("\\\\")) {
+            pathType = LocalPathType.UNC;
+        } else if (newPath.startsWith("/") || (newPath.length >= 3 && newPath.charAt(1) === ":" && newPath.charAt(2) === separator)) {
             pathType = LocalPathType.ABSOLUTE;
         }
         return new LocalPath(fileSystem, pathType, root, newPath); // TODO set type
