@@ -523,6 +523,13 @@ test("elements", async () => {
             .element(1, "gus.alice");
         (await PathOps.test(""))
             .element(0, "");
+    } else {
+        (await PathOps.test("a/b/c"))
+            .element(0, "a")
+            .element(1, "b")
+            .element(2, "c");
+        (await PathOps.test(""))
+            .element(0, "");
     }
 });
 
@@ -545,10 +552,40 @@ test("subpath", async () => {
             .subpath(0, 1, "foo");
         (await PathOps.test(""))
             .subpath(0, 1, "");
+    } else {
+        (await PathOps.test("/foo"))
+            .subpath(0, 1, "foo");
+        (await PathOps.test("foo"))
+            .subpath(0, 1, "foo");
+        (await PathOps.test("/foo/bar"))
+            .subpath(0, 1, "foo")
+            .subpath(1, 2, "bar")
+            .subpath(0, 2, "foo/bar");
+        (await PathOps.test("foo/bar"))
+            .subpath(0, 1, "foo")
+            .subpath(1, 2, "bar")
+            .subpath(0, 2, "foo/bar");
+        (await PathOps.test("/foo/bar/gus"))
+            .subpath(0, 1, "foo")
+            .subpath(1, 2, "bar")
+            .subpath(2, 3, "gus")
+            .subpath(0, 2, "foo/bar")
+            .subpath(1, 3, "bar/gus")
+            .subpath(0, 3, "foo/bar/gus");
+        (await PathOps.test("foo/bar/gus"))
+            .subpath(0, 1, "foo")
+            .subpath(1, 2, "bar")
+            .subpath(2, 3, "gus")
+            .subpath(0, 2, "foo/bar")
+            .subpath(1, 3, "bar/gus")
+            .subpath(0, 3, "foo/bar/gus");
+        (await PathOps.test(""))
+            .subpath(0, 1, "");
     }
 });
 
 test("isAbsolute", async () => {
+    const cwd: Path = (await Paths.of("")).toAbsolutePath();
     if (os.platform() === "win32") {
         (await PathOps.test("foo")).notAbsolute();
         (await PathOps.test("C:")).notAbsolute();
@@ -556,8 +593,18 @@ test("isAbsolute", async () => {
         (await PathOps.test("C:\\abc")).absolute();
         (await PathOps.test("\\\\server\\share\\")).absolute();
         (await PathOps.test("")).notAbsolute();
-        const cwd: Path = (await Paths.of("")).toAbsolutePath();
         (await PathOps.testPath(cwd)).absolute();
+    } else {
+        (await PathOps.test("/"))
+            .absolute();
+        (await PathOps.test("/tmp"))
+            .absolute();
+        (await PathOps.test("tmp"))
+            .notAbsolute();
+        (await PathOps.test(""))
+            .notAbsolute();
+        (await PathOps.testPath(cwd))
+            .absolute();
     }
 });
 
@@ -609,6 +656,19 @@ test("toAbsolutePath", async () => {
                 .hasRoot()
                 .string(cwd.toString() + "\\foo");
         }
+    } else {
+        (await PathOps.test("/"))
+            .makeAbsolute()
+            .absolute();
+        (await PathOps.test("/tmp"))
+            .makeAbsolute()
+            .absolute();
+        (await PathOps.test("tmp"))
+            .makeAbsolute()
+            .absolute();
+        (await PathOps.test(""))
+            .makeAbsolute()
+            .absolute();
     }
 });
 
