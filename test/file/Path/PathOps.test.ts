@@ -1642,18 +1642,18 @@ test("invalid", async () => {
         // (await PathOps.test("C:\\foo \\bar"))
         //     .invalid();
     } else {
-        // (await PathOps.test("foo\u0000bar"))
-        //     .invalid();
-        // (await PathOps.test("\u0000foo"))
-        //     .invalid();
-        // (await PathOps.test("bar\u0000"))
-        //     .invalid();
-        // (await PathOps.test("//foo\u0000bar"))
-        //     .invalid();
-        // (await PathOps.test("//\u0000foo"))
-        //     .invalid();
-        // (await PathOps.test("//bar\u0000"))
-        //     .invalid();
+        (await PathOps.test("foo\u0000bar"))
+            .invalid();
+        (await PathOps.test("\u0000foo"))
+            .invalid();
+        (await PathOps.test("bar\u0000"))
+            .invalid();
+        (await PathOps.test("//foo\u0000bar"))
+            .invalid();
+        (await PathOps.test("//\u0000foo"))
+            .invalid();
+        (await PathOps.test("//bar\u0000"))
+            .invalid();
     }
 });
 
