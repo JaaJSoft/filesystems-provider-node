@@ -202,7 +202,6 @@ class PathOps {
 
     invalid(): PathOps {
         expect(this.exc).toBeDefined();
-        fail();
         return this;
     }
 
@@ -1620,18 +1619,18 @@ test("UNC corner cases", async () => {
 
 test("invalid", async () => {
     if (os.platform() === "win32") {
-        // (await PathOps.test(":\\foo"))
-        //     .invalid();
-        // (await PathOps.test("C::"))
-        //     .invalid();
-        // (await PathOps.test("C:\\?"))         // invalid character
-        //     .invalid();
-        // (await PathOps.test("C:\\*"))         // invalid character
-        //     .invalid();
-        // (await PathOps.test("C:\\abc\u0001\\foo"))
-        //     .invalid();
-        // (await PathOps.test("C:\\\u0019\\foo"))
-        //     .invalid();
+        (await PathOps.test(":\\foo"))
+            .invalid();
+        (await PathOps.test("C::"))
+            .invalid();
+        (await PathOps.test("C:\\?"))         // invalid character
+            .invalid();
+        (await PathOps.test("C:\\*"))         // invalid character
+            .invalid();
+        (await PathOps.test("C:\\abc\u0001\\foo"))
+            .invalid();
+        (await PathOps.test("C:\\\u0019\\foo"))
+            .invalid();
         // (await PathOps.test("\\\\server\u0019\\share"))
         //     .invalid();
         // (await PathOps.test("\\\\server\\share\u0019"))
@@ -1643,18 +1642,18 @@ test("invalid", async () => {
         // (await PathOps.test("C:\\foo \\bar"))
         //     .invalid();
     } else {
-        // (await PathOps.test("foo\u0000bar"))
-        //     .invalid();
-        // (await PathOps.test("\u0000foo"))
-        //     .invalid();
-        // (await PathOps.test("bar\u0000"))
-        //     .invalid();
-        // (await PathOps.test("//foo\u0000bar"))
-        //     .invalid();
-        // (await PathOps.test("//\u0000foo"))
-        //     .invalid();
-        // (await PathOps.test("//bar\u0000"))
-        //     .invalid();
+        (await PathOps.test("foo\u0000bar"))
+            .invalid();
+        (await PathOps.test("\u0000foo"))
+            .invalid();
+        (await PathOps.test("bar\u0000"))
+            .invalid();
+        (await PathOps.test("//foo\u0000bar"))
+            .invalid();
+        (await PathOps.test("//\u0000foo"))
+            .invalid();
+        (await PathOps.test("//bar\u0000"))
+            .invalid();
     }
 });
 

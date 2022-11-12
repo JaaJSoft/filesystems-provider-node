@@ -19,7 +19,7 @@ import {LocalPathType} from "./LocalPathType";
 import * as jsurl from "url";
 import fs from "fs";
 import {FileSystem, LinkOption, Path} from "@filesystems/core/file";
-import {ProviderMismatchException} from "@filesystems/core/file/exception";
+import {InvalidPathException, ProviderMismatchException} from "@filesystems/core/file/exception";
 import {Objects} from "@filesystems/core/utils";
 import * as pathFs from "path";
 import {IllegalArgumentException} from "@filesystems/core/exception";
@@ -370,7 +370,16 @@ export class LocalPath extends Path {
         } else if ((newPath.length >= 2 && newPath.charAt(1) === ":" && newPath.charAt(2) !== separator)) {
             pathType = LocalPathType.DRIVE_RELATIVE;
         }
+        this.checkPathCharacters(newPath.substring(root.length));
         return new LocalPath(fileSystem, pathType, root, newPath); // TODO set type
+    }
+
+    private static checkPathCharacters(path: string): void {
+        for (const pathElement of path) {
+            if (LocalPath.isInvalidPathChar(pathElement)) {
+                throw new InvalidPathException(path, "invalid char : " + pathElement);
+            }
+        }
     }
 
     // generate offset array
@@ -438,5 +447,11 @@ export class LocalPath extends Path {
             }
         }
         return false;
+    }
+
+    private static readonly reservedChars = "<>:\"|?*";
+
+    private static isInvalidPathChar(ch: string): boolean {
+        return ch < "\u0020" || LocalPath.reservedChars.indexOf(ch) != -1;
     }
 }
