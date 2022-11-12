@@ -145,6 +145,22 @@ export class LocalPath extends Path {
     }
 
     public relativize(other: Path): Path {
+        const child: LocalPath = LocalPath.toLocalPath(other);
+        if (this.equals(child)) {
+            return this.emptyPath();
+        }
+        if (this.type != child.type) {
+            throw new IllegalArgumentException("'other' is different type of Path");
+        }
+        // can only relativize paths if root component matches
+        if (this.root.toUpperCase() !== child.root.toUpperCase()) {
+            throw new IllegalArgumentException("'other' has different root");
+        }
+        // this path is the empty path
+        if (this.isEmpty()) {
+            return child;
+        }
+
         let s: string;
         try {
             s = pathFs.relative(this.toString(), other.toString());
@@ -338,7 +354,7 @@ export class LocalPath extends Path {
         const dir: string = this.cleanSeparator(path.dir);
         const base: string = path.base;
         let root: string = this.cleanSeparator(path.root);
-        let newPath = dir.endsWith(separator) || base.length === 0 || dir.length === 0 ? dir + base : dir + separator + base;
+        let newPath = dir.endsWith(separator) || base.length === 0 || dir.length === 0 || dir.toUpperCase() === root.toUpperCase() ? dir + base : dir + separator + base;
         if (root.toUpperCase() !== newPath.toUpperCase() && newPath.endsWith(separator)) {
             newPath = newPath.substring(0, newPath.length - 1);
         } else if (root.toUpperCase() === newPath.toUpperCase() && root.length > 2 && !newPath.endsWith(separator)) {
@@ -351,6 +367,8 @@ export class LocalPath extends Path {
             pathType = LocalPathType.UNC;
         } else if (newPath.startsWith("/") || (newPath.length >= 3 && newPath.charAt(1) === ":" && newPath.charAt(2) === separator)) {
             pathType = LocalPathType.ABSOLUTE;
+        } else if ((newPath.length >= 2 && newPath.charAt(1) === ":" && newPath.charAt(2) !== separator)) {
+            pathType = LocalPathType.DRIVE_RELATIVE;
         }
         return new LocalPath(fileSystem, pathType, root, newPath); // TODO set type
     }
@@ -393,5 +411,30 @@ export class LocalPath extends Path {
 
     public valueOf(): unknown { // TODO
         return this.path.valueOf();
+    }
+
+    private emptyPath(): LocalPath {
+        return new LocalPath(this.getFileSystem(), LocalPathType.RELATIVE, "", "");
+    }
+
+    /**
+     * It returns true if the path contains a dot or dot dot
+     * @returns A boolean value.
+     */
+    private hasDotOrDotDot(): boolean {
+        const n = this.getNameCount();
+        for (let i = 0; i < n; i++) {
+            const name = this.elementAsString(i);
+            if (name.length == 1 && name.charAt(0) === ".") {
+                return true;
+            }
+            if (name.length == 2
+                && name.charAt(0) === "."
+                && name.charAt(1) === "."
+            ) {
+                return true;
+            }
+        }
+        return false;
     }
 }

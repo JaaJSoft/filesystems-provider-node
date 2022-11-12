@@ -183,7 +183,7 @@ class PathOps {
             await p.relativize(that);
             throw new Error();
         } catch (e) {
-            expect(typeof e).toBe(IllegalArgumentException);
+            expect(e instanceof IllegalArgumentException).toBeTruthy();
         }
         return this;
     }
