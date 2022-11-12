@@ -1564,6 +1564,40 @@ test("normalize", async () => {
             .normalize("foo");
         (await PathOps.test(""))
             .normalize("");
+    } else {
+        // normalize
+        await (await PathOps.test("/"))
+            .normalize("/");
+        await (await PathOps.test("foo"))
+            .normalize("foo");
+        await (await PathOps.test("/foo"))
+            .normalize("/foo");
+        await (await PathOps.test(""))
+            .normalize("");
+        await (await PathOps.test("."))
+            .normalize("");
+        await (await PathOps.test(".."))
+            .normalize("..");
+        await (await PathOps.test("/.."))
+            .normalize("/");
+        await (await PathOps.test("/../.."))
+            .normalize("/");
+        await (await PathOps.test("foo/."))
+            .normalize("foo");
+        await (await PathOps.test("./foo"))
+            .normalize("foo");
+        await (await PathOps.test("foo/.."))
+            .normalize("");
+        await (await PathOps.test("../foo"))
+            .normalize("../foo");
+        await (await PathOps.test("../../foo"))
+            .normalize("../../foo");
+        await (await PathOps.test("foo/bar/.."))
+            .normalize("foo");
+        await (await PathOps.test("foo/bar/gus/../.."))
+            .normalize("foo");
+        await (await PathOps.test("/foo/bar/gus/../.."))
+            .normalize("/foo");
     }
 });
 
@@ -1608,6 +1642,19 @@ test("invalid", async () => {
         //     .invalid();
         // (await PathOps.test("C:\\foo \\bar"))
         //     .invalid();
+    } else {
+        // (await PathOps.test("foo\u0000bar"))
+        //     .invalid();
+        // (await PathOps.test("\u0000foo"))
+        //     .invalid();
+        // (await PathOps.test("bar\u0000"))
+        //     .invalid();
+        // (await PathOps.test("//foo\u0000bar"))
+        //     .invalid();
+        // (await PathOps.test("//\u0000foo"))
+        //     .invalid();
+        // (await PathOps.test("//bar\u0000"))
+        //     .invalid();
     }
 });
 
@@ -1621,6 +1668,12 @@ test("normalization at construction time (remove redundant and replace slashes)"
             .string("C:\\a\\b\\c")
             .root("C:\\")
             .parent("C:\\a\\b");
+    } else {
+        (await PathOps.test("//foo//bar"))
+            .string("/foo/bar")
+            .root("/")
+            .parent("/foo")
+            .name("bar");
     }
 });
 
