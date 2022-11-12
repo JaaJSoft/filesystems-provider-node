@@ -55,8 +55,10 @@ test("LocalPathNotRootWithURL", async () => {
 });
 
 test("LocalPathExists", async () => {
-    const nullPath = Paths.ofURL(new URL("file:///T:/"));
-    expect(await Files.exists(await nullPath)).toBeFalsy();
+    if (os.platform() === "win32") {
+        const p = Paths.ofURL(new URL("file:///T:/"));
+        expect(await Files.exists(await p)).toBeFalsy();
+    }
 });
 
 test("LocalPathCurrentToAbsolutePath", async () => {
