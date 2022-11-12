@@ -259,7 +259,7 @@ test("construction", async () => {
 
 });
 
-test("all components present", async () => {
+test("all components", async () => {
     if (os.platform() == "win32") {
 
         (await PathOps.test("C:\\a\\b\\c"))
@@ -274,6 +274,11 @@ test("all components present", async () => {
             .root("\\\\server\\share\\")
             .parent("\\\\server\\share\\")
             .name("a");
+    } else {
+        (await PathOps.test("/a/b/c"))
+            .root("/")
+            .parent("/a/b")
+            .name("c");
     }
 });
 
@@ -291,6 +296,11 @@ test("root component only", async () => {
             .root("\\\\server\\share\\")
             .parent(null)
             .name(null);
+    } else {
+        (await PathOps.test("/"))
+            .root("/")
+            .parent(null)
+            .name(null);
     }
 });
 
@@ -300,11 +310,25 @@ test("no root component", async () => {
             .root(null)
             .parent("a")
             .name("b");
+    } else {
+        (await PathOps.test("a/b"))
+            .root(null)
+            .parent("a")
+            .name("b");
     }
 });
 
 test("name component only", async () => {
     if (os.platform() == "win32") {
+        (await PathOps.test("foo"))
+            .root(null)
+            .parent(null)
+            .name("foo");
+        (await PathOps.test(""))
+            .root(null)
+            .parent(null)
+            .name("");
+    } else {
         (await PathOps.test("foo"))
             .root(null)
             .parent(null)
