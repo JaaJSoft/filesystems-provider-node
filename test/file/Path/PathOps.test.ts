@@ -387,6 +387,35 @@ test("startsWith", async () => {
         (await PathOps.test(""))
             .starts("")
             .notStarts("\\");
+    } else {
+        (await PathOps.test("/"))
+            .starts("/")
+            .notStarts("")
+            .notStarts("/foo");
+        (await PathOps.test("/foo"))
+            .starts("/")
+            .starts("/foo")
+            .notStarts("/f");
+        (await PathOps.test("/foo/bar"))
+            .starts("/")
+            .starts("/foo")
+            .starts("/foo/bar")
+            .notStarts("/f")
+            .notStarts("foo")
+            .notStarts("foo/bar");
+        (await PathOps.test("foo"))
+            .starts("foo")
+            .notStarts("")
+            .notStarts("f");
+        (await PathOps.test("foo/bar"))
+            .starts("foo")
+            .starts("foo/bar")
+            .notStarts("f")
+            .notStarts("/foo")
+            .notStarts("/foo/bar");
+        (await PathOps.test(""))
+            .starts("")
+            .notStarts("/");
     }
 });
 
@@ -439,6 +468,47 @@ test("endWith", async () => {
         (await PathOps.test(""))
             .ends("")
             .notEnds("\\");
+    } else {
+        (await PathOps.test("/"))
+            .ends("/")
+            .notEnds("")
+            .notEnds("foo")
+            .notEnds("/foo");
+        (await PathOps.test("/foo"))
+            .ends("foo")
+            .ends("/foo")
+            .notEnds("fool");
+        (await PathOps.test("/foo/bar"))
+            .ends("bar")
+            .ends("foo/bar")
+            .ends("/foo/bar")
+            .notEnds("ar")
+            .notEnds("barack")
+            .notEnds("/bar")
+            .notEnds("o/bar");
+        (await PathOps.test("foo"))
+            .ends("foo")
+            .notEnds("")
+            .notEnds("oo")
+            .notEnds("oola");
+        (await PathOps.test("foo/bar"))
+            .ends("bar")
+            .ends("foo/bar")
+            .notEnds("r")
+            .notEnds("barmaid")
+            .notEnds("/bar");
+        (await PathOps.test("foo/bar/gus"))
+            .ends("gus")
+            .ends("bar/gus")
+            .ends("foo/bar/gus")
+            .notEnds("g")
+            .notEnds("/gus")
+            .notEnds("r/gus")
+            .notEnds("barack/gus")
+            .notEnds("bar/gust");
+        (await PathOps.test(""))
+            .ends("")
+            .notEnds("/");
     }
 });
 
