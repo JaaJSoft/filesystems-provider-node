@@ -355,8 +355,5 @@ test("LocalPathParsing", async () => {
         expect((await Paths.of("C:/foo/bar")).toString()).toBe("C:\\foo\\bar");
         expect((await Paths.of("C:\\")).toString()).toBe("C:\\");
         expect((await Paths.of("\\toto")).toString()).toBe("\\toto");
-        const path: Path = await Paths.of("..");
-        const relativize: Path = path.relativize(await Paths.of(""));
-        console.log(relativize)
     }
 });

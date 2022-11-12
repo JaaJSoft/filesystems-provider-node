@@ -421,6 +421,8 @@ export class LocalPath extends Path {
      * It returns true if the path contains a dot or dot dot
      * @returns A boolean value.
      */
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     private hasDotOrDotDot(): boolean {
         const n = this.getNameCount();
         for (let i = 0; i < n; i++) {
