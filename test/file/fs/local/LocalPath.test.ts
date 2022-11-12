@@ -348,6 +348,7 @@ test("LocalPathEquals", async () => {
 
 test("LocalPathParsing", async () => {
     if (os.platform() == "win32") {
+        // expect((await Paths.of(":\\foo")).toString()).toBe(":\\foo");
         expect((await Paths.of("C:foo")).toString()).toBe("C:foo");
         expect((await Paths.of("C:foo\\bar")).toString()).toBe("C:foo\\bar");
         expect((await Paths.of("C:\\foo\\bar")).toString()).toBe("C:\\foo\\bar");

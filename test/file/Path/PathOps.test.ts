@@ -236,6 +236,25 @@ test("construction", async () => {
             .string("C:\\");
         (await PathOps.test("", ["foo", "", "bar", "", "\\gus"]))
             .string("foo\\bar\\gus");
+    } else {
+        (await PathOps.test("/"))
+            .string("/");
+        (await PathOps.test("/", [""]))
+            .string("/");
+        (await PathOps.test("/", ["foo"]))
+            .string("/foo");
+        (await PathOps.test("/", ["/foo"]))
+            .string("/foo");
+        (await PathOps.test("/", ["foo/"]))
+            .string("/foo");
+        (await PathOps.test("foo", ["bar", "gus"]))
+            .string("foo/bar/gus");
+        (await PathOps.test(""))
+            .string("");
+        (await PathOps.test("", ["/"]))
+            .string("/");
+        (await PathOps.test("", ["foo", "", "bar", "", "/gus"]))
+            .string("foo/bar/gus");
     }
 
 });
@@ -1263,4 +1282,161 @@ test("relativize",
                 .relativizeFail("\\x"));
 
         }
-    });
+    },
+);
+
+test("normalize", async () => {
+    if (os.platform() === "win32") {
+        (await PathOps.test("C:\\"))
+            .normalize("C:\\");
+        (await PathOps.test("C:\\."))
+            .normalize("C:\\");
+        (await PathOps.test("C:\\.."))
+            .normalize("C:\\");
+        (await PathOps.test("\\\\server\\share"))
+            .normalize("\\\\server\\share\\");
+        (await PathOps.test("\\\\server\\share\\."))
+            .normalize("\\\\server\\share\\");
+        (await PathOps.test("\\\\server\\share\\.."))
+            .normalize("\\\\server\\share\\");
+        (await PathOps.test("C:"))
+            .normalize("C:");
+        (await PathOps.test("C:."))
+            .normalize("C:");
+        (await PathOps.test("C:.."))
+            .normalize("C:..");
+        (await PathOps.test("\\"))
+            .normalize("\\");
+        (await PathOps.test("\\."))
+            .normalize("\\");
+        (await PathOps.test("\\.."))
+            .normalize("\\");
+        (await PathOps.test("foo"))
+            .normalize("foo");
+        (await PathOps.test("foo\\."))
+            .normalize("foo");
+        (await PathOps.test("foo\\.."))
+            .normalize("");
+        (await PathOps.test("C:\\foo"))
+            .normalize("C:\\foo");
+        (await PathOps.test("C:\\foo\\."))
+            .normalize("C:\\foo");
+        (await PathOps.test("C:\\.\\foo"))
+            .normalize("C:\\foo");
+        (await PathOps.test("C:\\foo\\.."))
+            .normalize("C:\\");
+        (await PathOps.test("C:\\..\\foo"))
+            .normalize("C:\\foo");
+        (await PathOps.test("\\\\server\\share\\foo"))
+            .normalize("\\\\server\\share\\foo");
+        (await PathOps.test("\\\\server\\share\\foo\\."))
+            .normalize("\\\\server\\share\\foo");
+        (await PathOps.test("\\\\server\\share\\.\\foo"))
+            .normalize("\\\\server\\share\\foo");
+        (await PathOps.test("\\\\server\\share\\foo\\.."))
+            .normalize("\\\\server\\share\\");
+        (await PathOps.test("\\\\server\\share\\..\\foo"))
+            .normalize("\\\\server\\share\\foo");
+        (await PathOps.test("C:foo"))
+            .normalize("C:foo");
+        (await PathOps.test("C:foo\\."))
+            .normalize("C:foo");
+        (await PathOps.test("C:.\\foo"))
+            .normalize("C:foo");
+        (await PathOps.test("C:foo\\.."))
+            .normalize("C:");
+        (await PathOps.test("C:..\\foo"))
+            .normalize("C:..\\foo");
+        (await PathOps.test("\\foo"))
+            .normalize("\\foo");
+        (await PathOps.test("\\foo\\."))
+            .normalize("\\foo");
+        (await PathOps.test("\\.\\foo"))
+            .normalize("\\foo");
+        (await PathOps.test("\\foo\\.."))
+            .normalize("\\");
+        (await PathOps.test("\\..\\foo"))
+            .normalize("\\foo");
+        (await PathOps.test("."))
+            .normalize("");
+        (await PathOps.test(".."))
+            .normalize("..");
+        (await PathOps.test("\\..\\.."))
+            .normalize("\\");
+        (await PathOps.test("..\\..\\foo"))
+            .normalize("..\\..\\foo");
+        (await PathOps.test("foo\\bar\\.."))
+            .normalize("foo");
+        (await PathOps.test("foo\\bar\\.\\.."))
+            .normalize("foo");
+        (await PathOps.test("foo\\bar\\gus\\..\\.."))
+            .normalize("foo");
+        (await PathOps.test(".\\foo\\.\\bar\\.\\gus\\..\\.\\.."))
+            .normalize("foo");
+        (await PathOps.test(""))
+            .normalize("");
+    }
+});
+
+test("UNC corner cases", async () => {
+    if (os.platform() === "win32") {
+        (await PathOps.test("\\\\server\\share\\"))
+            .root("\\\\server\\share\\")
+            .parent(null)
+            .name(null);
+        // (await PathOps.test("\\\\server")) // TODO FIX UNC corner case
+        //     .invalid();
+        // (await PathOps.test("\\\\server\\"))
+        //     .invalid();
+        (await PathOps.test("\\\\server\\share"))
+            .root("\\\\server\\share\\")
+            .parent(null)
+            .name(null);
+    }
+});
+
+test("invalid", async () => {
+    if (os.platform() === "win32") {
+        // (await PathOps.test(":\\foo"))
+        //     .invalid();
+        // (await PathOps.test("C::"))
+        //     .invalid();
+        // (await PathOps.test("C:\\?"))         // invalid character
+        //     .invalid();
+        // (await PathOps.test("C:\\*"))         // invalid character
+        //     .invalid();
+        // (await PathOps.test("C:\\abc\u0001\\foo"))
+        //     .invalid();
+        // (await PathOps.test("C:\\\u0019\\foo"))
+        //     .invalid();
+        // (await PathOps.test("\\\\server\u0019\\share"))
+        //     .invalid();
+        // (await PathOps.test("\\\\server\\share\u0019"))
+        //     .invalid();
+        // (await PathOps.test("foo\u0000\bar"))
+        //     .invalid();
+        // (await PathOps.test("C:\\foo "))                // trailing space
+        //     .invalid();
+        // (await PathOps.test("C:\\foo \\bar"))
+        //     .invalid();
+    }
+});
+
+test("normalization at construction time (remove redundant and replace slashes)", async () => {
+    if (os.platform() === "win32") {
+        (await PathOps.test("C:/a/b/c"))
+            .string("C:\\a\\b\\c")
+            .root("C:\\")
+            .parent("C:\\a\\b");
+        (await PathOps.test("C://a//b//c"))
+            .string("C:\\a\\b\\c")
+            .root("C:\\")
+            .parent("C:\\a\\b");
+    }
+});
+
+test("hashcode/valueof", async () => {
+    if (os.platform() === "win32") {
+        //TODO
+    }
+});
