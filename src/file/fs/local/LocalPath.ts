@@ -19,10 +19,11 @@ import {LocalPathType} from "./LocalPathType";
 import * as jsurl from "url";
 import fs from "fs";
 import {FileSystem, LinkOption, Path} from "@filesystems/core/file";
-import {ProviderMismatchException} from "@filesystems/core/file/exception";
+import {InvalidPathException, ProviderMismatchException} from "@filesystems/core/file/exception";
 import {Objects} from "@filesystems/core/utils";
 import * as pathFs from "path";
 import {IllegalArgumentException} from "@filesystems/core/exception";
+import os from "os";
 
 /* `LocalPath` is a class that represents a path on the local file system. */
 export class LocalPath extends Path {
@@ -144,7 +145,30 @@ export class LocalPath extends Path {
     }
 
     public relativize(other: Path): Path {
-        return LocalPath.parse(this.fileSystem, pathFs.relative(this.toString(), other.toString()));
+        const child: LocalPath = LocalPath.toLocalPath(other);
+        if (this.equals(child)) {
+            return this.emptyPath();
+        }
+        if (this.type != child.type) {
+            throw new IllegalArgumentException("'other' is different type of Path");
+        }
+        // can only relativize paths if root component matches
+        if (this.root.toUpperCase() !== child.root.toUpperCase()) {
+            throw new IllegalArgumentException("'other' has different root");
+        }
+        // this path is the empty path
+        if (this.isEmpty()) {
+            return child;
+        }
+
+        let s: string;
+        try {
+            s = pathFs.relative(this.toString(), other.toString());
+        } catch (e) {
+            throw new IllegalArgumentException();
+        }
+        return LocalPath.parse(this.fileSystem, s);
+
     }
 
     public resolve(other: Path): Path {
@@ -158,6 +182,8 @@ export class LocalPath extends Path {
         } catch (e) {
             if (e instanceof ProviderMismatchException) {
                 return false;
+            } else {
+                throw e;
             }
         }
         if (!other) {
@@ -173,7 +199,9 @@ export class LocalPath extends Path {
         if (other.isEmpty()) {
             return this.isEmpty();
         }
-
+        if (this.equals(other)) {
+            return true;
+        }
         // roots match so compare elements
         const thisCount = this.getNameCount();
         let otherCount = other.getNameCount();
@@ -313,12 +341,45 @@ export class LocalPath extends Path {
         return false;
     }
 
-    private static pathFromJsPath(path: pathFs.ParsedPath, fileSystem: FileSystem, pathType: LocalPathType) {// TODO check separator
-        const newPath = path.dir.length > 1 && path.base.length !== 0 ? path.dir + fileSystem.getSeparator() + path.base : path.dir + path.base;
-        if (path.root === newPath || newPath.startsWith("/") || (newPath.length >= 3 && newPath.charAt(1) === ":")) {
-            pathType = LocalPathType.ABSOLUTE;
+    private static cleanSeparator(path: string): string {
+        if (os.platform() === "win32") {
+            return path.replaceAll("/", "\\");
+        } else {
+            return path.replaceAll("\\", "/");
         }
-        return new LocalPath(fileSystem, pathType, path.root, newPath); // TODO set type
+    }
+
+    private static pathFromJsPath(path: pathFs.ParsedPath, fileSystem: FileSystem, pathType: LocalPathType) {// TODO refactor
+        const separator: string = fileSystem.getSeparator();
+        const dir: string = this.cleanSeparator(path.dir);
+        const base: string = path.base;
+        let root: string = this.cleanSeparator(path.root);
+        let newPath = dir.endsWith(separator) || base.length === 0 || dir.length === 0 || dir.toUpperCase() === root.toUpperCase() ? dir + base : dir + separator + base;
+        if (root.toUpperCase() !== newPath.toUpperCase() && newPath.endsWith(separator)) {
+            newPath = newPath.substring(0, newPath.length - 1);
+        } else if (root.toUpperCase() === newPath.toUpperCase() && root.length > 2 && !newPath.endsWith(separator)) {
+            newPath += separator;
+            if (!root.endsWith(separator)) {
+                root += separator;
+            }
+        }
+        if (newPath.startsWith("\\\\")) {
+            pathType = LocalPathType.UNC;
+        } else if (newPath.startsWith("/") || (newPath.length >= 3 && newPath.charAt(1) === ":" && newPath.charAt(2) === separator)) {
+            pathType = LocalPathType.ABSOLUTE;
+        } else if ((newPath.length >= 2 && newPath.charAt(1) === ":" && newPath.charAt(2) !== separator)) {
+            pathType = LocalPathType.DRIVE_RELATIVE;
+        }
+        this.checkPathCharacters(newPath.substring(root.length));
+        return new LocalPath(fileSystem, pathType, root, newPath); // TODO set type
+    }
+
+    private static checkPathCharacters(path: string): void {
+        for (const pathElement of path) {
+            if (LocalPath.isInvalidPathChar(pathElement)) {
+                throw new InvalidPathException(path, "invalid char : " + pathElement);
+            }
+        }
     }
 
     // generate offset array
@@ -329,10 +390,11 @@ export class LocalPath extends Path {
                 // empty path considered to have one name element
                 list.push(0);
             } else {
+                const separator: string = this.fileSystem.getSeparator();
                 let start = this.root.length;
                 let off = this.root.length;
                 while (off < this.path.length) {
-                    if (this.path.charAt(off) !== this.fileSystem.getSeparator()) {
+                    if (this.path.charAt(off) !== separator) {
                         off++;
                     } else {
                         list.push(start);
@@ -343,7 +405,7 @@ export class LocalPath extends Path {
                     list.push(start);
             }
             if (!this.offsets)
-                return list;
+                this.offsets = list;
 
         }
         return this.offsets;
@@ -351,12 +413,45 @@ export class LocalPath extends Path {
 
     private elementAsString(i: number): string {
         this.offsets = this.initOffsets();
-        if (i == (this.offsets.length - 1))
+        if (i === (this.offsets.length - 1))
             return this.path.substring(this.offsets[i]);
         return this.path.substring(this.offsets[i], this.offsets[i + 1] - 1);
     }
 
     public valueOf(): unknown { // TODO
         return this.path.valueOf();
+    }
+
+    private emptyPath(): LocalPath {
+        return new LocalPath(this.getFileSystem(), LocalPathType.RELATIVE, "", "");
+    }
+
+    /**
+     * It returns true if the path contains a dot or dot dot
+     * @returns A boolean value.
+     */
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    private hasDotOrDotDot(): boolean {
+        const n = this.getNameCount();
+        for (let i = 0; i < n; i++) {
+            const name = this.elementAsString(i);
+            if (name.length == 1 && name.charAt(0) === ".") {
+                return true;
+            }
+            if (name.length == 2
+                && name.charAt(0) === "."
+                && name.charAt(1) === "."
+            ) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static readonly reservedChars = "<>:\"|?*";
+
+    private static isInvalidPathChar(ch: string): boolean {
+        return ch < "\u0020" || LocalPath.reservedChars.indexOf(ch) != -1;
     }
 }

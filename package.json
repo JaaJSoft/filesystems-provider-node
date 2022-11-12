@@ -42,7 +42,7 @@
     "typescript": "^4.8.3"
   },
   "dependencies": {
-    "@filesystems/core": "0.2.8",
+    "@filesystems/core": "0.2.10",
     "drivelist": "^11.0.0"
   }
 }

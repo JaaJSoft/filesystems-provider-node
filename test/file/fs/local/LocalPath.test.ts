@@ -34,7 +34,6 @@ import {LocalFileStore} from "../../../../src/file/fs/local/LocalFileStore";
 FileSystemProviders.register(new LocalFileSystemProvider());
 
 const rootPath: Promise<Path> = Paths.of("/");
-const cPath: Promise<Path> = Paths.of("C:/");
 const currentPath: Promise<Path> = Paths.of(".");
 
 test("LocalPathRoot", async () => {
@@ -55,8 +54,10 @@ test("LocalPathNotRootWithURL", async () => {
 });
 
 test("LocalPathExists", async () => {
-    const nullPath = Paths.ofURL(new URL("file:///T:/"));
-    expect(await Files.exists(await nullPath)).toBeFalsy();
+    if (os.platform() === "win32") {
+        const p = Paths.ofURL(new URL("file:///T:/"));
+        expect(await Files.exists(await p)).toBeFalsy();
+    }
 });
 
 test("LocalPathCurrentToAbsolutePath", async () => {
@@ -295,7 +296,11 @@ test("path", async () => {
     expect((await Paths.of(".")).isAbsolute()).toBeFalsy();
     expect((await Paths.of(".")).toString()).toEqual(".");
     expect((await Paths.of(".")).toAbsolutePath().isAbsolute()).toBeTruthy();
-    expect((await Paths.of("/")).toString()).toEqual("/");
+    if (os.platform() == "win32") {
+        expect((await Paths.of("/")).toString()).toEqual("\\");
+    } else {
+        expect((await Paths.of("/")).toString()).toEqual("/");
+    }
     expect((await Paths.of("/")).toRealPath().isAbsolute()).toBeTruthy();
 });
 
@@ -320,6 +325,7 @@ test("URL2", async () => {
 test("LocalPathGetFileStore", async () => {
     let path: Path;
     if (os.platform() == "win32") {
+        const cPath: Promise<Path> = Paths.of("C:/");
         path = await Paths.of("D:\\JAAJ8txt");
         const roots: Path[] = [...await path.getFileSystem().getRootDirectories()];
         if (roots.some(async value => value.toString() === "/" || value.toString().toUpperCase() === "C:/")) {
@@ -334,9 +340,27 @@ test("LocalPathGetFileStore", async () => {
 });
 
 test("LocalPathEquals", async () => {
+
     const tmpPath = await Paths.of("/tmp");
     expect((await rootPath).equals(await rootPath)).toBeTruthy();
     expect((await rootPath).equals(tmpPath)).toBeFalsy();
-    expect((await rootPath).equals(await cPath)).toBeFalsy();
+    if (os.platform() === "win32") {
+        const cPath: Promise<Path> = Paths.of("C:/");
+        expect((await rootPath).equals(await cPath)).toBeFalsy();
+    }
     expect((await rootPath).equals((await tmpPath).getParent())).toBeTruthy();
+});
+
+
+test("LocalPathParsing", async () => {
+    if (os.platform() == "win32") {
+        // expect((await Paths.of(":\\foo")).toString()).toBe(":\\foo");
+        expect((await Paths.of("C:foo")).toString()).toBe("C:foo");
+        expect((await Paths.of("C:foo\\bar")).toString()).toBe("C:foo\\bar");
+        expect((await Paths.of("C:\\foo\\bar")).toString()).toBe("C:\\foo\\bar");
+        expect((await Paths.of("C:/")).toString()).toBe("C:\\");
+        expect((await Paths.of("C:/foo/bar")).toString()).toBe("C:\\foo\\bar");
+        expect((await Paths.of("C:\\")).toString()).toBe("C:\\");
+        expect((await Paths.of("\\toto")).toString()).toBe("\\toto");
+    }
 });
