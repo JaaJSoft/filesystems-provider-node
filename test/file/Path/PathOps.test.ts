@@ -35,10 +35,8 @@ class PathOps {
         pathOps.fs = await FileSystems.getDefault();
         try {
             pathOps.path = (await FileSystems.getDefault()).getPath(first, more);
-            console.log("%s -> %s", first, pathOps.path.toString());
         } catch (e) {
             pathOps.exc = e;
-            console.log("%s -> %s", first, e);
         }
         return pathOps;
     }
