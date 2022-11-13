@@ -69,7 +69,13 @@ export class LocalFileSystemProvider extends AbstractFileSystemProvider {
     }
 
     public async getPath(url: URL): Promise<Path> {
-        return this.theFileSystem.getPath(jsurl.fileURLToPath(url));
+        let urlCleaned: string;
+        try {
+            urlCleaned = jsurl.fileURLToPath(url);
+        } catch (e) {
+            throw new IllegalArgumentException(e ? e.toString() : "error while cleaning URL");
+        }
+        return this.theFileSystem.getPath(urlCleaned);
     }
 
     public getScheme(): string {
