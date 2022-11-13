@@ -22,6 +22,7 @@ import {Drive} from "drivelist";
 import {LocalPath} from "./LocalPath";
 import {LocalFileSystem} from "./LocalFileSystem";
 
+/* It represents a drive on the local file system */
 export class LocalFileStore implements FileStore {
     private readonly _name: string;
     private readonly _type: string;
@@ -64,6 +65,12 @@ export class LocalFileStore implements FileStore {
         this._system = system;
     }
 
+    /**
+     * It creates a new LocalFileStore object
+     * @param {LocalFileSystem} fs - The file system that the drive is mounted on.
+     * @param {Drive} drive - Drive
+     * @returns A new LocalFileStore object.
+     */
     public static create(fs: LocalFileSystem, drive: Drive): LocalFileStore {
         return new LocalFileStore(
             drive.device,
@@ -158,6 +165,11 @@ export class LocalFileStore implements FileStore {
         throw new UnsupportedOperationException("no view supported"); // TODO View ?
     }
 
+    /**
+     * If the name is basic, owner, or posix, return true, otherwise return false.
+     * @param {string} name - The name of the file attribute view.
+     * @returns A boolean value.
+     */
     public supportsFileAttributeView(name: string): boolean {
         switch (name) {
             case "basic":
