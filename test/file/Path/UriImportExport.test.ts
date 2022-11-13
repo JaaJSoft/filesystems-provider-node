@@ -73,7 +73,7 @@ test("invalid", async () => {
         await testBadUri("file:/foo?q");
         await testBadUri("file:/foo#f");
     } else {
-        // await testBadUri("file:foo");
+        // await testBadUri("file:foo"); // TODO try to fix
         // await testBadUri("file:/foo?q");
         // await testBadUri("file:/foo#f");
         // await testBadUri("file:foo");
