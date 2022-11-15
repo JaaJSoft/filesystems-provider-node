@@ -281,7 +281,7 @@ export class LocalPath extends Path {
         for (let i = beginIndex; i < endIndex; i++) {
             path += this.elementAsString(i);
             if (i != (endIndex - 1))
-                path += "\\";
+                path += this.getFileSystem().getSeparator();
         }
         return new LocalPath(this.getFileSystem(), LocalPathType.RELATIVE, "", path);
     }
