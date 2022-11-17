@@ -49,9 +49,11 @@ import {LocalPosixFileAttributeView} from "./view/LocalPosixFileAttributeView";
 import {ReadableStream, TextDecoderStream, TextEncoderStream, WritableStream} from "stream/web";
 import {mapCopyOptionsToFlags, mapOpenOptionsToFlags} from "./Helper";
 import {LocalFileStore} from "./LocalFileStore";
+import tmp from "tmp";
 
 /* It's a FileSystemProvider that provides a LocalFileSystem */
 export class LocalFileSystemProvider extends AbstractFileSystemProvider {
+
     private readonly theFileSystem: LocalFileSystem;
 
     public constructor() {
@@ -387,5 +389,35 @@ export class LocalFileSystemProvider extends AbstractFileSystemProvider {
             default:
                 throw new UnsupportedOperationException();
         }
+    }
+
+    public async createTempFile(path?: Path | undefined, prefix?: string | undefined, suffix?: string | undefined, attrs?: FileAttribute<unknown>[] | undefined): Promise<Path> {
+        let tmpdir: Path;
+        const fileSystem: FileSystem = this.theFileSystem;
+        if (path) {
+            tmpdir = path.toAbsolutePath();
+        } else {
+            tmpdir = LocalPath.parse(fileSystem, os.tmpdir());
+        }
+        await this.checkAccess(tmpdir, [AccessMode.WRITE]);
+        await this.createDirectory(tmpdir);
+        const tmpFileName: string = tmp.tmpNameSync({prefix, postfix: suffix, tmpdir: tmpdir.toString()});
+        const localPath: Path = LocalPath.parse(fileSystem, tmpFileName);
+        await this.checkAccess(localPath, [AccessMode.WRITE]);
+        await this.createFile(localPath, attrs);
+        return localPath;
+    }
+
+    public async createTempDirectory(path?: Path | undefined, prefix?: string | undefined, attrs?: FileAttribute<unknown>[] | undefined): Promise<Path> {
+        let tmpdir: Path;
+        const sep = this.theFileSystem.getSeparator();
+        if (path) {
+            tmpdir = path.toAbsolutePath();
+        } else {
+            tmpdir = LocalPath.parse(this.theFileSystem, os.tmpdir());
+        }
+        await this.checkAccess(tmpdir, [AccessMode.WRITE]);
+        const newTmpDir: string = await fsAsync.mkdtemp(tmpdir.toString() + sep + prefix ?? "");
+        return LocalPath.parse(this.theFileSystem, newTmpDir);
     }
 }
