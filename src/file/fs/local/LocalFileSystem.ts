@@ -18,13 +18,15 @@
 import * as jsPath from "path";
 import {FileSystemProvider} from "@filesystems/core/file/spi";
 import {LocalFileSystemProvider} from "./LocalFileSystemProvider";
-import {UnsupportedOperationException} from "@filesystems/core/exception";
+import {IllegalArgumentException, UnsupportedOperationException} from "@filesystems/core/exception";
 import {FileStore, FileSystem, Path, PathMatcher} from "@filesystems/core/file";
 import {Objects} from "@filesystems/core/utils";
 import {LocalPath} from "./LocalPath";
 import {AttributeViewName, UserPrincipalLookupService} from "@filesystems/core/file/attribute";
 import {list} from "drivelist";
 import {LocalFileStore} from "./LocalFileStore";
+import micromatch from "micromatch";
+import os from "os";
 
 export class LocalFileSystem extends FileSystem {
     private readonly fsProvider: FileSystemProvider;
@@ -66,8 +68,48 @@ export class LocalFileSystem extends FileSystem {
         return LocalPath.parse(this, path);
     }
 
+    private static readonly GLOB_SYNTAX = "GLOB";
+    private static readonly REGEX_SYNTAX = "REGEX";
+
     public getPathMatcher(syntaxAndPattern: string): PathMatcher { // TODO
-        throw new Error("Method not implemented.");
+        const pos = syntaxAndPattern.indexOf(":");
+        if (pos <= 0 || pos == syntaxAndPattern.length)
+            throw new IllegalArgumentException();
+        const syntax = syntaxAndPattern.substring(0, pos);
+        const input = syntaxAndPattern.substring(pos + 1);
+        if (syntax.toUpperCase() === LocalFileSystem.GLOB_SYNTAX) {
+            return new class implements PathMatcher {
+                private readonly matcher: (str: string) => boolean;
+
+                constructor() {
+                    this.matcher = micromatch.matcher(input, {nocase: os.platform() === "win32"});
+                }
+
+                public matches(path: Path | null): boolean {
+                    if (!path) {
+                        return false;
+                    }
+                    return this.matcher(path.toString());
+                }
+            };
+        } else if (syntax.toUpperCase() === LocalFileSystem.REGEX_SYNTAX) {
+            return new class implements PathMatcher {
+                private readonly matcher: RegExp;
+
+                constructor() {
+                    this.matcher = new RegExp(input);
+                }
+
+                public matches(path: Path | null): boolean {
+                    if (!path) {
+                        return false;
+                    }
+                    return this.matcher.test(path.toString());
+                }
+            };
+        } else {
+            throw new UnsupportedOperationException("Syntax '" + syntax + "' not recognized");
+        }
     }
 
     public async getRootDirectories(): Promise<Iterable<Path>> {

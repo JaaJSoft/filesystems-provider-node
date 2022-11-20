@@ -281,7 +281,7 @@ export class LocalPath extends Path {
         for (let i = beginIndex; i < endIndex; i++) {
             path += this.elementAsString(i);
             if (i != (endIndex - 1))
-                path += "\\";
+                path += this.getFileSystem().getSeparator();
         }
         return new LocalPath(this.getFileSystem(), LocalPathType.RELATIVE, "", path);
     }
@@ -452,6 +452,10 @@ export class LocalPath extends Path {
     private static readonly reservedChars = "<>:\"|?*";
 
     private static isInvalidPathChar(ch: string): boolean {
-        return ch < "\u0020" || LocalPath.reservedChars.indexOf(ch) != -1;
+        if (os.platform() === "win32") {
+            return ch < "\u0020" || LocalPath.reservedChars.indexOf(ch) != -1;
+        }
+        return false;
     }
+
 }

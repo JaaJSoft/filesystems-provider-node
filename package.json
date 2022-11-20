@@ -1,6 +1,6 @@
 {
   "name": "@filesystems/provider-node",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "node filesystem provider for filesystems-core",
   "main": "index.js",
   "type": "commonjs",
@@ -30,6 +30,8 @@
     "@babel/preset-typescript": "^7.16.5",
     "@types/jest": "^27.0.3",
     "@types/node": "^16.11.7",
+    "@types/tmp": "^0.2.1",
+    "@types/micromatch": "^4.0.2",
     "@typescript-eslint/eslint-plugin": "^5.37.0",
     "@typescript-eslint/parser": "^5.37.0",
     "babel-jest": "^27.5.1",
@@ -42,7 +44,9 @@
     "typescript": "^4.8.3"
   },
   "dependencies": {
-    "@filesystems/core": "0.2.10",
-    "drivelist": "^11.0.0"
+    "@filesystems/core": "0.2.12",
+    "drivelist": "^11.0.0",
+    "micromatch": "^4.0.5",
+    "tmp": "^0.2.1"
   }
 }

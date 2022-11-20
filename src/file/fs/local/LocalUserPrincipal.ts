@@ -18,6 +18,7 @@
 import {UserPrincipal} from "@filesystems/core/file/attribute";
 import {Principal} from "@filesystems/core";
 
+/* A wrapper around a user ID and an optional account name */
 export class LocalUserPrincipal implements UserPrincipal {
     private readonly accountName: string | null;
     private readonly uid: number;
