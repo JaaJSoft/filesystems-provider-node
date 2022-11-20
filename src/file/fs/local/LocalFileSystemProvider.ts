@@ -20,7 +20,8 @@ import {LocalFileSystem} from "./LocalFileSystem";
 import {
     AccessMode,
     CopyOption,
-    DirectoryStream, Files,
+    DirectoryStream,
+    Files,
     FileStore,
     FileSystem,
     followLinks,
@@ -31,7 +32,6 @@ import {
 import * as jsurl from "url";
 import fs from "fs";
 import fsAsync from "fs/promises";
-import {FileSystemProviders} from "@filesystems/core/file/spi";
 import {IllegalArgumentException, UnsupportedOperationException} from "@filesystems/core/exception";
 import {AccessDeniedException, FileSystemAlreadyExistsException} from "@filesystems/core/file/exception";
 import os from "os";
@@ -50,6 +50,7 @@ import {ReadableStream, TextDecoderStream, TextEncoderStream, WritableStream} fr
 import {mapCopyOptionsToFlags, mapOpenOptionsToFlags} from "./Helper";
 import {LocalFileStore} from "./LocalFileStore";
 import tmp from "tmp";
+import {FileSystemProviders} from "@filesystems/core/file/spi";
 
 /* It's a FileSystemProvider that provides a LocalFileSystem */
 export class LocalFileSystemProvider extends AbstractFileSystemProvider {
@@ -132,11 +133,11 @@ export class LocalFileSystemProvider extends AbstractFileSystemProvider {
 
     private static readonly BUFFER_SIZE: number = 8192;
 
-    public override newTextDecoder(charsets: string): TextDecoderStream {
+    public newTextDecoder(charsets: string): TextDecoderStream {
         return new TextDecoderStream(charsets);
     }
 
-    public override newTextEncoder(): TextEncoderStream {
+    public newTextEncoder(): TextEncoderStream {
         return new TextEncoderStream();
     }
 
@@ -364,7 +365,7 @@ export class LocalFileSystemProvider extends AbstractFileSystemProvider {
 
     public async delete(path: Path): Promise<void> {
         await this.checkAccess(path, [AccessMode.WRITE]);
-        if (await Files.isDirectory(path)){
+        if (await Files.isDirectory(path)) {
             await fsAsync.rmdir(path.toURL(), {});
         } else {
             await fsAsync.rm(path.toURL(), {});

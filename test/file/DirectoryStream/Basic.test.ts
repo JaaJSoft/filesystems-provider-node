@@ -15,10 +15,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 import {DirectoryStream, Files, Path, Paths} from "@filesystems/core/file";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 import {createTemporaryDirectory, removeAll} from "../TestUtil";
 import {FileSystemProviders} from "@filesystems/core/file/spi";
 import {LocalFileSystemProvider} from "../../../src";
-import {IOException} from "@filesystems/core/exception";
 import {AccessDeniedException, DirectoryIteratorException} from "@filesystems/core/file/exception";
 
 let dir: Path;
@@ -59,33 +60,33 @@ test("iterate over directory and check there is one entry", async () => {
 });
 
 test("check filtering: f* should match foo", async () => {
-    // let ds: DirectoryStream<Path> | undefined;
-    // try {
-    //     const matcher = dir.getFileSystem().getPathMatcher("glob:f*");
-    //     ds = await Files.newDirectoryStream(dir, path => path ? matcher.matches(path.getFileName()) : false);
-    //     for await (const entry of ds) {
-    //         expect(foo.equals(entry.getFileName())).toBeTruthy();
-    //     }
-    // } finally {
-    //     if (ds) {
-    //         ds.close();
-    //     }
-    // }
+    let ds: DirectoryStream<Path> | undefined;
+    try {
+        const matcher = dir.getFileSystem().getPathMatcher("glob:f*");
+        ds = await Files.newDirectoryStream(dir, path => path ? matcher.matches(path.getFileName()) : false);
+        for await (const entry of ds) {
+            expect(foo.equals(entry.getFileName())).toBeTruthy();
+        }
+    } finally {
+        if (ds) {
+            ds.close();
+        }
+    }
 });
 
 test("check filtering: z* should not match any files", async () => {
-    // let ds: DirectoryStream<Path> | undefined;
-    // try {
-    //     const matcher = dir.getFileSystem().getPathMatcher("glob:z*");
-    //     ds = await Files.newDirectoryStream(dir, path => path ? matcher.matches(path.getFileName()) : false);
-    //     for await (const entry of ds) {
-    //         expect(foo.equals(entry.getFileName())).toBeTruthy();
-    //     }
-    // } finally {
-    //     if (ds) {
-    //         ds.close();
-    //     }
-    // }
+    let ds: DirectoryStream<Path> | undefined;
+    try {
+        const matcher = dir.getFileSystem().getPathMatcher("glob:z*");
+        ds = await Files.newDirectoryStream(dir, path => path ? matcher.matches(path.getFileName()) : false);
+        for await (const entry of ds) {
+            expect(foo.equals(entry.getFileName())).toBeFalsy();
+        }
+    } finally {
+        if (ds) {
+            ds.close();
+        }
+    }
 });
 
 test("check that an IOException thrown by a filter is propagated", async () => {
