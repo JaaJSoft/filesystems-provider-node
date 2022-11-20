@@ -20,7 +20,7 @@ import {LocalFileSystem} from "./LocalFileSystem";
 import {
     AccessMode,
     CopyOption,
-    DirectoryStream,
+    DirectoryStream, Files,
     FileStore,
     FileSystem,
     followLinks,
@@ -364,11 +364,16 @@ export class LocalFileSystemProvider extends AbstractFileSystemProvider {
 
     public async delete(path: Path): Promise<void> {
         await this.checkAccess(path, [AccessMode.WRITE]);
-        await fsAsync.rm(path.toString(), {});
+        if (await Files.isDirectory(path)){
+            await fsAsync.rmdir(path.toURL(), {});
+        } else {
+            await fsAsync.rm(path.toURL(), {});
+        }
     }
 
     public async readAttributesByName(path: Path, name?: AttributeViewName, options?: LinkOption[]): Promise<BasicFileAttributes> {
         switch (name) {
+            case undefined:
             case "basic":
             case "posix":
                 return (this.getFileAttributeView(path, name, options) as BasicFileAttributeView).readAttributes();
@@ -380,6 +385,7 @@ export class LocalFileSystemProvider extends AbstractFileSystemProvider {
     public getFileAttributeView(path: Path, name?: AttributeViewName, options?: LinkOption[]): FileAttributeView {
         const follow: boolean = followLinks(options);
         switch (name) {
+            case undefined:
             case "basic":
                 return new LocalBasicFileAttributesView(path as LocalPath, follow);
             case "owner":

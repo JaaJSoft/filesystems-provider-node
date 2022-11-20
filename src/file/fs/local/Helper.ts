@@ -29,7 +29,7 @@ import {CopyOption, LinkOption, OpenOption, StandardCopyOption, StandardOpenOpti
  * @returns A promise that resolves to a fs.Stats object.
  */
 export async function getPathStats(path: LocalPath, followLinks: boolean): Promise<fs.Stats> {
-    return (followLinks ? fsAsync.stat(path.toString()) : fsAsync.lstat(path.toString()));
+    return (followLinks ? fsAsync.stat(path.toURL()) : fsAsync.lstat(path.toURL()));
 }
 
 /**
