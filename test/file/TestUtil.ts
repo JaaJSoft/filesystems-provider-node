@@ -91,9 +91,9 @@ export async function supportsLinks(dir: Path) {
         await Files.delete(link);
         return true;
     } catch (x) {
-        if (x instanceof UnsupportedOperationException){
+        if (x instanceof UnsupportedOperationException) {
             return false;
-        }else if(x instanceof IOException){
+        } else if (x instanceof IOException) {
             return false;
         }
         throw x;
