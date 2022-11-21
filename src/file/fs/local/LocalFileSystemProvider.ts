@@ -46,7 +46,6 @@ import {LocalDirectoryStream} from "./LocalDirectoryStream";
 import {LocalPath} from "./LocalPath";
 import {LocalBasicFileAttributesView, LocalFileOwnerAttributeView} from "./view";
 import {LocalPosixFileAttributeView} from "./view/LocalPosixFileAttributeView";
-import {ReadableStream, WritableStream} from "stream/web";
 import {mapCopyOptionsToFlags, mapOpenOptionsToFlags} from "./Helper";
 import {LocalFileStore} from "./LocalFileStore";
 import tmp from "tmp";
@@ -198,7 +197,6 @@ export class LocalFileSystemProvider extends AbstractFileSystemProvider {
         let fd = -1;
         return new WritableStream<Uint8Array>({
             start: controller => {
-                // @ts-expect-error jeej
                 fd = LocalFileSystemProvider.start(path, controller, options);
             },
             write: (chunk, controller) => {
