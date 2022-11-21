@@ -46,7 +46,7 @@ import {LocalDirectoryStream} from "./LocalDirectoryStream";
 import {LocalPath} from "./LocalPath";
 import {LocalBasicFileAttributesView, LocalFileOwnerAttributeView} from "./view";
 import {LocalPosixFileAttributeView} from "./view/LocalPosixFileAttributeView";
-import {ReadableStream, TextDecoderStream, TextEncoderStream, WritableStream} from "stream/web";
+import {ReadableStream, WritableStream} from "stream/web";
 import {mapCopyOptionsToFlags, mapOpenOptionsToFlags} from "./Helper";
 import {LocalFileStore} from "./LocalFileStore";
 import tmp from "tmp";
@@ -132,14 +132,6 @@ export class LocalFileSystemProvider extends AbstractFileSystemProvider {
     }
 
     private static readonly BUFFER_SIZE: number = 8192;
-
-    public newTextDecoder(charsets: string): TextDecoderStream {
-        return new TextDecoderStream(charsets);
-    }
-
-    public newTextEncoder(): TextEncoderStream {
-        return new TextEncoderStream();
-    }
 
     /**
      * It opens a file and returns the file descriptor
