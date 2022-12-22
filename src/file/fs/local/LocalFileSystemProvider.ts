@@ -235,12 +235,15 @@ export class LocalFileSystemProvider extends AbstractFileSystemProvider {
      * @param [attrs] - An array of FileAttribute objects.
      */
     public async createDirectory(dir: Path, attrs?: Array<FileAttribute<unknown>>): Promise<void> {
-        await fsAsync.mkdir(dir.toString());
-        if (attrs != null) {
-            for (const value of attrs) {
-                await this.setAttribute(dir, value.name(), value.value());
+        if (await Files.notExists(dir)) {
+            await fsAsync.mkdir(dir.toString());
+            if (attrs != null) {
+                for (const value of attrs) {
+                    await this.setAttribute(dir, value.name(), value.value());
+                }
             }
         }
+
     }
 
     /**
@@ -400,7 +403,7 @@ export class LocalFileSystemProvider extends AbstractFileSystemProvider {
         await this.createDirectory(tmpdir);
         const tmpFileName: string = tmp.tmpNameSync({prefix, postfix: suffix, tmpdir: tmpdir.toString()});
         const localPath: Path = LocalPath.parse(fileSystem, tmpFileName);
-        await this.checkAccess(localPath, [AccessMode.WRITE]);
+        await this.checkAccess(tmpdir, [AccessMode.WRITE]);
         await this.createFile(localPath, attrs);
         return localPath;
     }
