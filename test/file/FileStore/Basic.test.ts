@@ -99,7 +99,7 @@ test("Enumerate all FileStores", async () => {
             } else if (e instanceof AccessDeniedException) {
                 //
             } else if (os.platform() !== "linux" || store.toString().indexOf("/run/user") == -1) {
-                expect(e instanceof FileSystemException)
+                expect(e instanceof FileSystemException).toBeTruthy();
             } else {
                 //
             }
