@@ -374,6 +374,8 @@ export class LocalFileSystemProvider extends AbstractFileSystemProvider {
         await this.checkAccess(path, [AccessMode.WRITE]);
         if (await Files.isDirectory(path)) {
             await fsAsync.rmdir(path.toURL(), {});
+        } else if (await Files.isSymbolicLink(path)) {
+            await fsAsync.unlink(path.toString());
         } else {
             await fsAsync.rm(path.toURL(), {});
         }
