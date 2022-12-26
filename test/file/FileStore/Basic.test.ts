@@ -35,6 +35,15 @@ function checkWithin1GB(expected: bigint, actual: bigint) {
     expect(diff > G).toBeFalsy();
 }
 
+function fileStoreEquals(fileStore1: FileStore, fileStore2: FileStore) {
+    expect(fileStore1.name()).toEqual(fileStore2.name());
+    expect(fileStore1.type()).toEqual(fileStore2.type());
+    expect(fileStore1.isReadOnly()).toEqual(fileStore2.isReadOnly());
+    expect(fileStore1.getBlockSize()).toEqual(fileStore2.getBlockSize());
+    expect(fileStore1.getUsableSpace()).toEqual(fileStore2.getUsableSpace());
+    expect(fileStore1.getTotalSpace()).toEqual(fileStore2.getTotalSpace());
+}
+
 let dir: Path;
 beforeAll(async () => {
     FileSystemProviders.register(new LocalFileSystemProvider());
@@ -50,8 +59,7 @@ test("Two files should have the same FileStore", async () => {
     const file2 = await Files.createFile(dir.resolveFromString("bar"));
     const store1 = await Files.getFileStore(file1);
     const store2 = await Files.getFileStore(file2);
-    expect(store1).toEqual(store2);
-    expect(store2).toEqual(store1);
+    fileStoreEquals(store1, store2);
 });
 test("Windows: FileStore.equals() should not be case sensitive", async () => {
     if (os.platform() === "win32") {

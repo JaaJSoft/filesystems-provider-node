@@ -16,11 +16,11 @@
  */
 
 import {Files, LinkOption, Path} from "@filesystems/core/file";
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
 import {FileSystemProviders} from "@filesystems/core/file/spi";
 import {LocalFileSystemProvider} from "../../../../src";
 import {BasicFileAttributes, BasicFileAttributeView} from "@filesystems/core/file/attribute";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignoreF
 import {createTemporaryDirectory, removeAll} from "../../TestUtil";
 
 
