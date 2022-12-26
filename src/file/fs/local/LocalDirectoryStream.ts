@@ -16,7 +16,6 @@
  */
 
 import * as fs from "fs";
-import {LocalPath} from "./LocalPath";
 import {DirectoryStream, Path} from "@filesystems/core/file";
 import {IOException} from "@filesystems/core/exception";
 import {DirectoryIteratorException} from "@filesystems/core/file/exception";
@@ -32,9 +31,11 @@ export class LocalDirectoryStream implements DirectoryStream<Path> {
 
     private readDir(dir: Path, acceptFilter: (path: Path) => boolean): Path[] {
         const files = fs.readdirSync(dir.toString(), {withFileTypes: true, encoding: "utf-8"});
-        const fileSystem = dir.getFileSystem();
-        return files.map(value => LocalPath.parse(fileSystem, value.name)).filter(value => {
+        return files.map(value => dir.resolveFromString(value.name)).filter((value): value is Path => {
             try {
+                if (!value) {
+                    return false;
+                }
                 return acceptFilter(value);
             } catch (e) {
                 if (e instanceof IOException) {

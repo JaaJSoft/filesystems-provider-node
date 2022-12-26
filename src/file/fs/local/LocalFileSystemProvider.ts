@@ -214,6 +214,14 @@ export class LocalFileSystemProvider extends AbstractFileSystemProvider {
         });
     }
 
+    private async setAttributes(path: Path, attrs: FileAttribute<unknown>[] | undefined) {
+        if (attrs) {
+            for (const value of attrs) {
+                await this.setAttribute(path, value.name(), value.value());
+            }
+        }
+    }
+
     /**
      * "Create a file at the given path, and if there are any attributes, set them."
 
@@ -222,11 +230,7 @@ export class LocalFileSystemProvider extends AbstractFileSystemProvider {
      */
     public async createFile(path: Path, attrs?: Array<FileAttribute<unknown>>): Promise<void> {
         await fsAsync.writeFile(path.toString(), "");
-        if (attrs != null) {
-            for (const value of attrs) {
-                await this.setAttribute(path, value.name(), value.value());
-            }
-        }
+        await this.setAttributes(path, attrs);
     }
 
     /**
@@ -235,12 +239,25 @@ export class LocalFileSystemProvider extends AbstractFileSystemProvider {
      * @param [attrs] - An array of FileAttribute objects.
      */
     public async createDirectory(dir: Path, attrs?: Array<FileAttribute<unknown>>): Promise<void> {
-        await fsAsync.mkdir(dir.toString());
-        if (attrs != null) {
-            for (const value of attrs) {
-                await this.setAttribute(dir, value.name(), value.value());
-            }
+        if (await Files.notExists(dir)) {
+            await fsAsync.mkdir(dir.toString());
+            await this.setAttributes(dir, attrs);
         }
+
+    }
+
+    async createSymbolicLink(link: Path, target: Path, attrs?: FileAttribute<unknown>[]): Promise<void> {
+        await fsAsync.symlink(target.toString(), link.toString(), await Files.isDirectory(target) ? "dir" : "file");
+        await this.setAttributes(link, attrs);
+    }
+
+
+    async createLink(link: Path, existing: Path): Promise<void> {
+        await fsAsync.link(existing.toString(), link.toString());
+    }
+
+    async readSymbolicLink(link: Path): Promise<Path> {
+        return LocalPath.parse(this.getTheFileSystem(), await fsAsync.readlink(link.toString()));
     }
 
     /**
@@ -357,6 +374,8 @@ export class LocalFileSystemProvider extends AbstractFileSystemProvider {
         await this.checkAccess(path, [AccessMode.WRITE]);
         if (await Files.isDirectory(path)) {
             await fsAsync.rmdir(path.toURL(), {});
+        } else if (await Files.isSymbolicLink(path)) {
+            await fsAsync.unlink(path.toString());
         } else {
             await fsAsync.rm(path.toURL(), {});
         }
@@ -400,7 +419,7 @@ export class LocalFileSystemProvider extends AbstractFileSystemProvider {
         await this.createDirectory(tmpdir);
         const tmpFileName: string = tmp.tmpNameSync({prefix, postfix: suffix, tmpdir: tmpdir.toString()});
         const localPath: Path = LocalPath.parse(fileSystem, tmpFileName);
-        await this.checkAccess(localPath, [AccessMode.WRITE]);
+        await this.checkAccess(tmpdir, [AccessMode.WRITE]);
         await this.createFile(localPath, attrs);
         return localPath;
     }
