@@ -18,15 +18,6 @@ async function createGrapeFile(): Promise<Path> {
     return Files.createTempFile("red", ".grape");
 }
 
-function checkMimeTypesFile(mimeTypeFile: Path) {
-    expect(Files.exists(mimeTypeFile)).toBeTruthy();
-    expect(Files.isReadable(mimeTypeFile)).toBeTruthy();
-}
-
-function checkContentTypes(expected: string, actual: string) {
-
-}
-
 beforeAll(async () => {
     FileSystemProviders.register(new LocalFileSystemProvider());
     FileTypeDetectors.installedDetectors.push(new SimpleFileTypeDetector());
