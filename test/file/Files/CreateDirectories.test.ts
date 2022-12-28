@@ -1,3 +1,5 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 import {createTemporaryDirectory, supportsLinks} from "../TestUtil";
 import {Files, Paths} from "@filesystems/core/file";
 import {FileSystemProviders} from "@filesystems/core/file/spi";

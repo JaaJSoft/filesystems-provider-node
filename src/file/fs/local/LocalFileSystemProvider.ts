@@ -357,12 +357,11 @@ export class LocalFileSystemProvider extends AbstractFileSystemProvider {
     }
 
     public async isHidden(obj: Path): Promise<boolean> {
-        await this.checkAccess(obj);
         const name = obj.getFileName();
         if (name == null) {
             return false;
         }
-        return name.startsWithStr(".");
+        return name.toString().startsWith(".");
     }
 
     public async isSameFile(obj1: Path, obj2: Path): Promise<boolean> {
