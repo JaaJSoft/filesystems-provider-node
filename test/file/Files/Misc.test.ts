@@ -9,12 +9,15 @@ import {IOException} from "@filesystems/core/exception";
 
 let dir: Path;
 let thisFile: Path;
+let supportLink = false;
+
 let thatFile: Path;
 beforeAll(async () => {
     FileSystemProviders.register(new LocalFileSystemProvider());
     dir = await createTemporaryDirectory();
     thisFile = dir.resolveFromString("thisFile");
     thatFile = dir.resolveFromString("thatFile");
+    supportLink = await supportsLinks(dir);
 });
 
 test("isHidden", async () => {
@@ -95,7 +98,7 @@ test("Exercise isRegularFile, isDirectory, isSymbolicLink", async () => {
         expect(await Files.isDirectory(file, [LinkOption.NOFOLLOW_LINKS])).toBeFalsy();
         expect(await Files.isSymbolicLink(file)).toBeFalsy();
 
-        if (await supportsLinks(dir)) {
+        if (supportLink) {
             const link = dir.resolveFromString("link");
 
             await Files.createSymbolicLink(link, dir);
@@ -159,7 +162,7 @@ test("Exercise isReadbale, isWritable, isExecutable, exists, notExists", async (
         expect(await Files.notExists(dir)).toBeFalsy();
 
         // sym link exists
-        if (await supportsLinks(dir)) {
+        if (supportLink) {
             const link = dir.resolveFromString("link");
 
             await Files.createSymbolicLink(link, file);

@@ -83,7 +83,6 @@ const exTypes: ExType[] = [
 test("Verify that certain extensions are mapped to the correct type", async () => {
     for (const exType of exTypes) {
         const extension = exType.extension;
-        console.log(extension);
         const expectedTypes = exType.expectedTypes;
         const file = await Files.createTempFile("foo", "." + extension);
         try {
