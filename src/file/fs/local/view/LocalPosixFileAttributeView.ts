@@ -138,7 +138,8 @@ export class LocalPosixFileAttributeView extends AbstractPosixFileAttributeView 
 
     public async setPermissions(perms: Set<PosixFilePermission>): Promise<void> {
         await this.path.getFileSystem().provider().checkAccess(this.path);
-        await fsAsync.chmod(this.path.toString(), convertPermissionsToPosix(perms));
+        const mode = convertPermissionsToPosix(perms);
+        await fsAsync.chmod(this.path.toString(), mode);
     }
 
     public async setTimes(lastModifiedTime?: FileTime, lastAccessTime?: FileTime, createTime?: FileTime): Promise<void> {

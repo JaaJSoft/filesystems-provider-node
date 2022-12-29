@@ -75,12 +75,10 @@ test("Exercise getAttribute/setAttribute/readAttributes on posix attributes", as
     newPerms.delete(PosixFilePermission.OTHERS_READ);
     newPerms.delete(PosixFilePermission.OTHERS_WRITE);
     newPerms.delete(PosixFilePermission.OTHERS_EXECUTE);
-    if (os.platform() !== "win32") {
-        await Files.setAttribute(file, "posix:permissions", newPerms);
-        expect([...await Files.getPosixFilePermissions(file)]).toEqual([...newPerms]);
-        await Files.setAttribute(file, "posix:permissions", orig);
-        expect([...await Files.getPosixFilePermissions(file)]).toEqual([...orig]);
-    }
+    await Files.setAttribute(file, "posix:permissions", newPerms);
+    expect([...await Files.getPosixFilePermissions(file)]).toEqual([...newPerms]);
+    await Files.setAttribute(file, "posix:permissions", orig);
+    expect([...await Files.getPosixFilePermissions(file)]).toEqual([...orig]);
     await Files.setAttribute(file, "posix:owner", posix.owner());
     await Files.setAttribute(file, "posix:group", posix.group());
 
