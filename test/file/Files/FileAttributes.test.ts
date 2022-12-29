@@ -21,10 +21,6 @@ let posix: PosixFileAttributes;
 beforeAll(async () => {
     FileSystemProviders.register(new LocalFileSystemProvider());
     dir = await createTemporaryDirectory();
-
-});
-beforeEach(async () => {
-    await Files.deleteIfExists(file);
     file = dir.resolveFromString("foo");
     await Files.createFile(file);
     attrs = await Files.readAttributesByName(file, "basic");
@@ -36,7 +32,7 @@ afterAll(async () => {
 });
 
 
-test("Exercise getAttribute on basic attributes", async () => {
+test("Exercise getAttribute/setAttribute/readAttributes on basic attributes", async () => {
     expect(attrs.size()).toEqual(await Files.getAttribute(file, "size"));
     expect(attrs.lastModifiedTime()).toEqual(await Files.getAttribute(file, "basic:lastModifiedTime"));
     expect(attrs.lastAccessTime()).toEqual(await Files.getAttribute(file, "lastAccessTime"));
@@ -46,17 +42,13 @@ test("Exercise getAttribute on basic attributes", async () => {
     expect(await Files.getAttribute(file, "isSymbolicLink") as boolean).toBeFalsy();
     expect(await Files.getAttribute(file, "basic:isOther") as boolean).toBeFalsy();
     expect(attrs.fileKey()).toEqual(await Files.getAttribute(file, "basic:fileKey"));
-});
 
-test("Exercise setAttribute on basic attributes", async () => {
     const modTime = attrs.lastModifiedTime();
     await Files.setAttribute(file, "basic:lastModifiedTime", FileTime.fromMillis(0));
     expect(await Files.getLastModifiedTime(file)).toEqual(FileTime.fromMillis(0));
     await Files.setAttribute(file, "lastModifiedTime", modTime);
     expect(fileTimeEqualsRounded(await Files.getLastModifiedTime(file), modTime)).toBeTruthy();
-});
 
-test("Exercise readAttributes on basic attributes", async () => {
     let map: Map<string, unknown>;
     map = await Files.readAttributes(file, "*");
     expect(map.size).toBeGreaterThanOrEqual(9);
@@ -71,28 +63,27 @@ test("Exercise readAttributes on basic attributes", async () => {
     expect(fileTimeEqualsRounded(attrs.lastModifiedTime(), map.get("lastModifiedTime") as FileTime)).toBeTruthy();
 
 });
-test("Exercise getAttribute on posix attributes", async () => {
+
+
+test("Exercise getAttribute/setAttribute/readAttributes on posix attributes", async () => {
     expect(posix.permissions()).toEqual(await Files.getAttribute(file, "posix:permissions"));
     expect(posix.owner()).toEqual(await Files.getAttribute(file, "posix:owner"));
     expect(posix.group()).toEqual(await Files.getAttribute(file, "posix:group"));
-});
 
-test("Exercise setAttribute on posix attributes", async () => {
     const orig: Set<PosixFilePermission> = posix.permissions();
     const newPerms: Set<PosixFilePermission> = new Set<PosixFilePermission>(orig);
     newPerms.delete(PosixFilePermission.OTHERS_READ);
     newPerms.delete(PosixFilePermission.OTHERS_WRITE);
     newPerms.delete(PosixFilePermission.OTHERS_EXECUTE);
-    await Files.setAttribute(file, "posix:permissions", newPerms);
     if (os.platform() !== "win32") {
+        await Files.setAttribute(file, "posix:permissions", newPerms);
         expect([...await Files.getPosixFilePermissions(file)]).toEqual([...newPerms]);
         await Files.setAttribute(file, "posix:permissions", orig);
         expect([...await Files.getPosixFilePermissions(file)]).toEqual([...orig]);
     }
     await Files.setAttribute(file, "posix:owner", posix.owner());
     await Files.setAttribute(file, "posix:group", posix.group());
-});
-test("Exercise readAttributes on posix attributes", async () => {
+
     let map: Map<string, unknown>;
     map = await Files.readAttributes(file, "posix:*");
     expect(map.size).toBeGreaterThanOrEqual(12);
