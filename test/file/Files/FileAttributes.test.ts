@@ -15,8 +15,9 @@ import os from "os";
 
 let dir: Path;
 let file: Path;
-let attrs: BasicFileAttributes
-let posix: PosixFileAttributes
+let attrs: BasicFileAttributes;
+let posix: PosixFileAttributes;
+
 beforeAll(async () => {
     FileSystemProviders.register(new LocalFileSystemProvider());
     dir = await createTemporaryDirectory();
