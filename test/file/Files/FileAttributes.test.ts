@@ -2,7 +2,7 @@ import {FileSystemProviders} from "@filesystems/core/file/spi";
 import {LocalFileSystemProvider} from "../../../src";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-import {createTemporaryDirectory, removeAll} from "../TestUtil";
+import {createTemporaryDirectory, fileTimeEqualsRounded, removeAll} from "../TestUtil";
 import {Files, Path} from "@filesystems/core/file";
 import {IllegalArgumentException, UnsupportedOperationException} from "@filesystems/core/exception";
 import {
@@ -21,6 +21,10 @@ let posix: PosixFileAttributes;
 beforeAll(async () => {
     FileSystemProviders.register(new LocalFileSystemProvider());
     dir = await createTemporaryDirectory();
+
+});
+beforeEach(async () => {
+    await Files.deleteIfExists(file);
     file = dir.resolveFromString("foo");
     await Files.createFile(file);
     attrs = await Files.readAttributesByName(file, "basic");
@@ -43,13 +47,15 @@ test("Exercise getAttribute on basic attributes", async () => {
     expect(await Files.getAttribute(file, "basic:isOther") as boolean).toBeFalsy();
     expect(attrs.fileKey()).toEqual(await Files.getAttribute(file, "basic:fileKey"));
 });
+
 test("Exercise setAttribute on basic attributes", async () => {
     const modTime = attrs.lastModifiedTime();
     await Files.setAttribute(file, "basic:lastModifiedTime", FileTime.fromMillis(0));
     expect(await Files.getLastModifiedTime(file)).toEqual(FileTime.fromMillis(0));
     await Files.setAttribute(file, "lastModifiedTime", modTime);
-    expect(Math.trunc((await Files.getLastModifiedTime(file)).toMillis() / 1000)).toEqual(Math.trunc(modTime.toMillis() / 1000));
+    expect(fileTimeEqualsRounded(await Files.getLastModifiedTime(file), modTime)).toBeTruthy();
 });
+
 test("Exercise readAttributes on basic attributes", async () => {
     let map: Map<string, unknown>;
     map = await Files.readAttributes(file, "*");
@@ -58,12 +64,12 @@ test("Exercise readAttributes on basic attributes", async () => {
 
     map = await Files.readAttributes(file, "basic:*");
     expect(map.size).toBeGreaterThanOrEqual(9);
-    expect(attrs.lastAccessTime()).toEqual(map.get("lastAccessTime")); // check one
-
+    expect(fileTimeEqualsRounded(attrs.lastAccessTime(), map.get("lastAccessTime") as FileTime)).toBeTruthy();
     map = await Files.readAttributes(file, "size,lastModifiedTime");
     expect(map.size).toEqual(2);
     expect(attrs.size()).toEqual(map.get("size"));
-    expect(attrs.lastModifiedTime()).toEqual(map.get("lastModifiedTime"));
+    expect(fileTimeEqualsRounded(attrs.lastModifiedTime(), map.get("lastModifiedTime") as FileTime)).toBeTruthy();
+
 });
 test("Exercise getAttribute on posix attributes", async () => {
     expect(posix.permissions()).toEqual(await Files.getAttribute(file, "posix:permissions"));
