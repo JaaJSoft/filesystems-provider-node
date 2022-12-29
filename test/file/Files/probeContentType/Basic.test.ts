@@ -1,6 +1,8 @@
 import {Files, Path, Paths} from "@filesystems/core/file";
 import {FileSystemProviders, FileTypeDetectors} from "@filesystems/core/file/spi";
 import {LocalFileSystemProvider} from "../../../../src";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 import {SimpleFileTypeDetector} from "./SimpleFileTypeDetector";
 
 interface ExType {
