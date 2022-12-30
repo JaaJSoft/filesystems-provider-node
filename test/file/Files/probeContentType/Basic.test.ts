@@ -1,6 +1,8 @@
 import {Files, Path, Paths} from "@filesystems/core/file";
 import {FileSystemProviders, FileTypeDetectors} from "@filesystems/core/file/spi";
 import {LocalFileSystemProvider} from "../../../../src";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 import {SimpleFileTypeDetector} from "./SimpleFileTypeDetector";
 
 interface ExType {
@@ -16,15 +18,6 @@ async function createHTMLFile(): Promise<Path> {
 
 async function createGrapeFile(): Promise<Path> {
     return Files.createTempFile("red", ".grape");
-}
-
-function checkMimeTypesFile(mimeTypeFile: Path) {
-    expect(Files.exists(mimeTypeFile)).toBeTruthy();
-    expect(Files.isReadable(mimeTypeFile)).toBeTruthy();
-}
-
-function checkContentTypes(expected: string, actual: string) {
-
 }
 
 beforeAll(async () => {
@@ -92,7 +85,6 @@ const exTypes: ExType[] = [
 test("Verify that certain extensions are mapped to the correct type", async () => {
     for (const exType of exTypes) {
         const extension = exType.extension;
-        console.log(extension);
         const expectedTypes = exType.expectedTypes;
         const file = await Files.createTempFile("foo", "." + extension);
         try {

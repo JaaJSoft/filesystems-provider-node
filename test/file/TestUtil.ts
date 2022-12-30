@@ -18,7 +18,7 @@
 
 import {Files, FileSystems, FileVisitor, FileVisitResult, Path} from "@filesystems/core/file";
 import {IOException, UnsupportedOperationException} from "@filesystems/core/exception";
-import {BasicFileAttributes} from "@filesystems/core/file/attribute";
+import {BasicFileAttributes, FileTime} from "@filesystems/core/file/attribute";
 import {Objects} from "@filesystems/core/utils";
 
 export async function createTemporaryDirectoryAt(where: string): Promise<Path> {
@@ -98,4 +98,9 @@ export async function supportsLinks(dir: Path) {
         }
         throw x;
     }
+}
+
+
+export function fileTimeEqualsRounded(time1: FileTime, time2: FileTime): boolean {
+    return Math.trunc(time1.toMillis() / 1000) === Math.trunc(time2.toMillis() / 1000);
 }

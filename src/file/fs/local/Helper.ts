@@ -38,31 +38,48 @@ export async function getPathStats(path: LocalPath, followLinks: boolean): Promi
  * @returns A number representing the permissions of a file.
  */
 export function convertPermissionsToPosix(perms: Iterable<PosixFilePermission>): number {
-    let owner = 0;
-    let group = 0;
-    let others = 0;
+    let p = 0;
     for (const perm of perms) {
         if (perm === PosixFilePermission.OWNER_READ) {
-            owner += 4;
+            p = (p | fs.constants.S_IRUSR);
         } else if (perm === PosixFilePermission.OWNER_WRITE) {
-            owner += 2;
+            p = (p | fs.constants.S_IWUSR);
         } else if (perm === PosixFilePermission.OWNER_EXECUTE) {
-            owner += 1;
+            p = (p | fs.constants.S_IXUSR);
         } else if (perm === PosixFilePermission.GROUP_READ) {
-            group += 4;
+            p = (p | fs.constants.S_IRGRP);
         } else if (perm === PosixFilePermission.GROUP_WRITE) {
-            group += 2;
+            p = (p | fs.constants.S_IWGRP);
         } else if (perm === PosixFilePermission.GROUP_EXECUTE) {
-            group += 1;
+            p = (p | fs.constants.S_IXGRP);
         } else if (perm === PosixFilePermission.OTHERS_READ) {
-            others += 4;
+            p = (p | fs.constants.S_IROTH);
         } else if (perm === PosixFilePermission.OTHERS_WRITE) {
-            others += 2;
+            p = (p | fs.constants.S_IWOTH);
         } else if (perm === PosixFilePermission.OTHERS_EXECUTE) {
-            others += 1;
+            p = (p | fs.constants.S_IXOTH);
         }
     }
-    return owner * 100 + group * 10 + others;
+    return p;
+}
+
+/**
+ * It converts a number representing a file's permissions into an array of strings representing the file's permissions
+ * @param {number} perms - number - The permissions to convert.
+ * @returns An array of PosixFilePermission
+ */
+export function convertPosixPermissions(perms: number): PosixFilePermission[] {
+    const posixFilePermissions: Set<PosixFilePermission> = new Set<PosixFilePermission>();
+    if (perms & fs.constants.S_IRUSR) posixFilePermissions.add(PosixFilePermission.OWNER_READ);
+    if (perms & fs.constants.S_IWUSR) posixFilePermissions.add(PosixFilePermission.OWNER_WRITE);
+    if (perms & fs.constants.S_IXUSR) posixFilePermissions.add(PosixFilePermission.OWNER_EXECUTE);
+    if (perms & fs.constants.S_IRGRP) posixFilePermissions.add(PosixFilePermission.GROUP_READ);
+    if (perms & fs.constants.S_IWGRP) posixFilePermissions.add(PosixFilePermission.GROUP_WRITE);
+    if (perms & fs.constants.S_IXGRP) posixFilePermissions.add(PosixFilePermission.GROUP_EXECUTE);
+    if (perms & fs.constants.S_IROTH) posixFilePermissions.add(PosixFilePermission.OTHERS_READ);
+    if (perms & fs.constants.S_IWOTH) posixFilePermissions.add(PosixFilePermission.OTHERS_WRITE);
+    if (perms & fs.constants.S_IXOTH) posixFilePermissions.add(PosixFilePermission.OTHERS_EXECUTE);
+    return [...posixFilePermissions];
 }
 
 /**
@@ -120,21 +137,3 @@ export function mapCopyOptionsToFlags(options: CopyOption[] = [StandardCopyOptio
     return flags.reduce((previousValue, currentValue) => previousValue | currentValue);
 }
 
-/**
- * It converts a number representing a file's permissions into an array of strings representing the file's permissions
- * @param {number} perms - number - The permissions to convert.
- * @returns An array of PosixFilePermission
- */
-export function convertPosixPermissions(perms: number): PosixFilePermission[] {
-    const posixFilePermissions: Set<PosixFilePermission> = new Set<PosixFilePermission>();
-    if (perms & fs.constants.S_IRUSR) posixFilePermissions.add(PosixFilePermission.OWNER_READ);
-    if (perms & fs.constants.S_IWUSR) posixFilePermissions.add(PosixFilePermission.OWNER_WRITE);
-    if (perms & fs.constants.S_IXUSR) posixFilePermissions.add(PosixFilePermission.OWNER_EXECUTE);
-    if (perms & fs.constants.S_IRGRP) posixFilePermissions.add(PosixFilePermission.GROUP_READ);
-    if (perms & fs.constants.S_IWGRP) posixFilePermissions.add(PosixFilePermission.GROUP_WRITE);
-    if (perms & fs.constants.S_IXGRP) posixFilePermissions.add(PosixFilePermission.GROUP_EXECUTE);
-    if (perms & fs.constants.S_IROTH) posixFilePermissions.add(PosixFilePermission.OTHERS_READ);
-    if (perms & fs.constants.S_IWOTH) posixFilePermissions.add(PosixFilePermission.OTHERS_WRITE);
-    if (perms & fs.constants.S_IXOTH) posixFilePermissions.add(PosixFilePermission.OTHERS_EXECUTE);
-    return [...posixFilePermissions];
-}

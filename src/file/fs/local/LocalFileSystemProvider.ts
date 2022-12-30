@@ -32,8 +32,12 @@ import {
 import * as jsurl from "url";
 import fs from "fs";
 import fsAsync from "fs/promises";
-import {IllegalArgumentException, UnsupportedOperationException} from "@filesystems/core/exception";
-import {AccessDeniedException, FileSystemAlreadyExistsException} from "@filesystems/core/file/exception";
+import {IllegalArgumentException, IOException, UnsupportedOperationException} from "@filesystems/core/exception";
+import {
+    AccessDeniedException, FileAlreadyExistsException,
+    FileSystemAlreadyExistsException,
+    NoSuchFileException
+} from "@filesystems/core/file/exception";
 import os from "os";
 import {
     AttributeViewName,
@@ -239,7 +243,12 @@ export class LocalFileSystemProvider extends AbstractFileSystemProvider {
      * @param [attrs] - An array of FileAttribute objects.
      */
     public async createDirectory(dir: Path, attrs?: Array<FileAttribute<unknown>>): Promise<void> {
-        if (await Files.notExists(dir)) {
+        const parent = dir.getParent();
+        if (await Files.exists(dir) && !await Files.isDirectory(dir)) {
+            throw new FileAlreadyExistsException(dir.toString());
+        } else if (parent && await Files.isRegularFile(parent)) {
+            throw new IOException("parent is not a directory");
+        } else if (await Files.notExists(dir)) {
             await fsAsync.mkdir(dir.toString());
             await this.setAttributes(dir, attrs);
         }
@@ -327,6 +336,9 @@ export class LocalFileSystemProvider extends AbstractFileSystemProvider {
                 }
             }));
         } catch (err) {
+            if ((err as Error).message.includes("no such file or directory")) {
+                throw new NoSuchFileException(path.toString(), undefined, (err as Error).message);
+            }
             throw new AccessDeniedException(path);
         }
     }
@@ -345,12 +357,11 @@ export class LocalFileSystemProvider extends AbstractFileSystemProvider {
     }
 
     public async isHidden(obj: Path): Promise<boolean> {
-        await this.checkAccess(obj);
         const name = obj.getFileName();
         if (name == null) {
             return false;
         }
-        return name.startsWithStr(".");
+        return name.toString().startsWith(".");
     }
 
     public async isSameFile(obj1: Path, obj2: Path): Promise<boolean> {
