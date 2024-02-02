@@ -44,7 +44,7 @@
     "typescript": "^5.0.4"
   },
   "dependencies": {
-    "@filesystems/core": "0.2.18",
+    "@filesystems/core": "0.2.20",
     "drivelist": "^11.0.4",
     "micromatch": "^4.0.5",
     "tmp": "^0.2.1"

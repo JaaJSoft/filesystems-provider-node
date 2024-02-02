@@ -1,6 +1,6 @@
 /*
  * FileSystems - FileSystem abstraction for JavaScript
- * Copyright (C) 2022 JaaJSoft
+ * Copyright (C) 2024 JaaJSoft
  *
  * this program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,7 +19,7 @@ import * as jsPath from "path";
 import {FileSystemProvider} from "@filesystems/core/file/spi";
 import {LocalFileSystemProvider} from "./LocalFileSystemProvider";
 import {IllegalArgumentException, UnsupportedOperationException} from "@filesystems/core/exception";
-import {FileStore, FileSystem, Path, PathMatcher} from "@filesystems/core/file";
+import {FileStore, FileSystem, Path, PathMatcher, WatchService} from "@filesystems/core/file";
 import {Objects} from "@filesystems/core/utils";
 import {LocalPath} from "./LocalPath";
 import {AttributeViewName, UserPrincipalLookupService} from "@filesystems/core/file/attribute";
@@ -27,8 +27,10 @@ import {list} from "drivelist";
 import {LocalFileStore} from "./LocalFileStore";
 import micromatch from "micromatch";
 import os from "os";
+import {LocalWatchService} from "./LocalWatchService";
 
 export class LocalFileSystem extends FileSystem {
+
     private readonly fsProvider: FileSystemProvider;
     private readonly defaultDirectory: string;
     private readonly defaultRoot: string;
@@ -149,5 +151,9 @@ export class LocalFileSystem extends FileSystem {
 
     public getDefaultRoot(): string {
         return this.defaultRoot;
+    }
+
+    public newWatchService(): WatchService {
+        return new LocalWatchService();
     }
 }
