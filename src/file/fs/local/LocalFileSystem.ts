@@ -154,6 +154,8 @@ export class LocalFileSystem extends FileSystem {
     }
 
     public newWatchService(): WatchService {
-        return new LocalWatchService();
+        const localWatchService = new LocalWatchService();
+        localWatchService.init();
+        return localWatchService;
     }
 }
