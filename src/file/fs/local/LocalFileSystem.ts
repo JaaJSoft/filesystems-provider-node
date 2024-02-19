@@ -27,7 +27,7 @@ import {list} from "drivelist";
 import {LocalFileStore} from "./LocalFileStore";
 import micromatch from "micromatch";
 import os from "os";
-import {LocalWatchService} from "./LocalWatchService";
+import {PollingWatchService} from "../PollingWatchService";
 
 export class LocalFileSystem extends FileSystem {
 
@@ -154,8 +154,8 @@ export class LocalFileSystem extends FileSystem {
     }
 
     public newWatchService(): WatchService {
-        const localWatchService = new LocalWatchService();
-        localWatchService.init();
-        return localWatchService;
+        const watchService = new PollingWatchService(); // TODO replace with os watcher
+        watchService.init();
+        return watchService;
     }
 }
