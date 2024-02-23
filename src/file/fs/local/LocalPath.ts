@@ -54,7 +54,6 @@ export class LocalPath extends Path {
     public static parse(fileSystem: FileSystem, path: string): LocalPath {
         const parse = pathFs.parse(path);
         return LocalPath.pathFromJsPath(parse, fileSystem, LocalPathType.RELATIVE);
-
     }
 
     public static toLocalPath(path: Path): LocalPath {
@@ -141,7 +140,11 @@ export class LocalPath extends Path {
     }
 
     public normalize(): Path {
-        return LocalPath.parse(this.fileSystem, pathFs.normalize(this.toString()));
+        let norm = pathFs.normalize(this.toString());
+        if (norm.endsWith(norm + ".") || norm.endsWith(":.") || (norm.length === 1 && norm === ".")) {
+            norm = norm.substring(0, norm.length - 1);
+        }
+        return LocalPath.parse(this.fileSystem, norm);
     }
 
     public relativize(other: Path): Path {
@@ -363,6 +366,7 @@ export class LocalPath extends Path {
                 root += separator;
             }
         }
+
         if (newPath.startsWith("\\\\")) {
             pathType = LocalPathType.UNC;
         } else if (newPath.startsWith("/") || (newPath.length >= 3 && newPath.charAt(1) === ":" && newPath.charAt(2) === separator)) {
