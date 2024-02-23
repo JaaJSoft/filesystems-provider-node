@@ -342,11 +342,11 @@ export class LocalPath extends Path {
     }
 
     private static cleanSeparator(path: string): string {
+        const p = path.replaceAll("\\", "/").replace(/([^:]\/)\/+/g, "$1");
         if (os.platform() === "win32") {
-            return path.replaceAll("/", "\\");
-        } else {
-            return path.replaceAll("\\", "/");
+            return p.replaceAll("/", "\\").replaceAll(":\\\\", ":\\");
         }
+        return p;
     }
 
     private static pathFromJsPath(path: pathFs.ParsedPath, fileSystem: FileSystem, pathType: LocalPathType) {// TODO refactor

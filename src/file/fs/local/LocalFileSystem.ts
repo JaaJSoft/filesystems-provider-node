@@ -58,9 +58,10 @@ export class LocalFileSystem extends FileSystem {
         if ((more == null) || more.length === 0) {
             path = first;
         } else {
+            path = first;
             for (const segment of more) {
                 if (segment.length !== 0) {
-                    if (path.length > 0) {
+                    if (path.length > 0 && !segment.startsWith(this.getSeparator())) {
                         path += this.getSeparator();
                     }
                     path += segment;

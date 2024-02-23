@@ -32,7 +32,7 @@ export class PollingWatchService extends AbstractWatchService {
 
 
     init(): void {
-        throw new Error("Method not implemented.");
+        //
     }
 
     get registrations(): Map<unknown, PollingWatchKey> {
