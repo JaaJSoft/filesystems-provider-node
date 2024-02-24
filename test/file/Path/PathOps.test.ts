@@ -617,7 +617,7 @@ test("toAbsolutePath", async () => {
             .makeAbsolute()
             .absolute()
             .hasRoot()
-            .string(cwd.toString() + "\\.");
+            .string(cwd.toString());
         (await PathOps.test("foo"))
             .makeAbsolute()
             .absolute()
@@ -644,7 +644,7 @@ test("toAbsolutePath", async () => {
                 .makeAbsolute()
                 .absolute()
                 .hasRoot()
-                .string(cwd.toString() + "\\.");
+                .string(cwd.toString());
 
             // C:foo
             (await PathOps.test(root + "foo"))
