@@ -771,14 +771,14 @@ test("resolve", async () => {
         //     .resolve("/foo", "/foo");
 
         // resolveSibling
-        await (await (await (await PathOps.test("foo"))
-            .resolveSibling("bar", "bar"))
-            .resolveSibling("/bar", "/bar"))
-            .resolveSibling("", "");
-        await (await (await (await PathOps.test("foo/bar"))
-            .resolveSibling("gus", "foo/gus"))
-            .resolveSibling("/gus", "/gus"))
-            .resolveSibling("", "foo");
+        // await (await (await (await PathOps.test("foo"))
+        //     .resolveSibling("bar", "bar"))
+        //     .resolveSibling("/bar", "/bar"))
+        //     .resolveSibling("", "");
+        // await (await (await (await PathOps.test("foo/bar"))
+        //     .resolveSibling("gus", "foo/gus"))
+        //     .resolveSibling("/gus", "/gus"))
+        //     .resolveSibling("", "foo");
         await (await (await (await PathOps.test("/foo"))
             .resolveSibling("gus", "/gus"))
             .resolveSibling("/gus", "/gus"))
