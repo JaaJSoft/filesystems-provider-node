@@ -348,6 +348,8 @@ export class LocalPath extends Path {
         const p = path.replaceAll("\\", "/").replace(/([^:]\/)\/+/g, "$1");
         if (os.platform() === "win32") {
             return p.replaceAll("/", "\\").replaceAll(":\\\\", ":\\");
+        } else if (p.startsWith("/")) {
+            return p.replaceAll("//", "/");
         }
         return p;
     }
