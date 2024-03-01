@@ -15,14 +15,23 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {FileSystems, Path, WatchEventKind, WatchKey, WatchService} from "@filesystems/core/file";
+import {
+    Files,
+    FileSystems,
+    Path,
+    StandardWatchEventKinds,
+    WatchEventKind,
+    WatchKey,
+    WatchService
+} from "@filesystems/core/file";
 import {FileSystemProviders} from "@filesystems/core/file/spi";
 import {LocalFileSystemProvider} from "../../../src";
 import {WatchEvent} from "@filesystems/core/file/WatchEvent";
+import {createTemporaryDirectory} from "../TestUtil";
 
 function checkKey(key: WatchKey, dir: Path) {
     expect(key.isValid()).toBeTruthy();
-    expect(key.watchable()).toEqual(dir);
+    expect((key.watchable() as Path).toString()).toEqual(dir.toString());
 }
 
 function checkExpectedEvent(
@@ -35,23 +44,43 @@ function checkExpectedEvent(
     expect(expectedContext).toStrictEqual(event.context());
 }
 
-beforeAll(() => {
+async function takeExpectedKey(watcher: WatchService, expected: WatchKey) {
+    const key = await watcher.poll();
+    expect(key).toBe(expected);
+}
+
+let dir: Path;
+beforeAll(async () => {
     FileSystemProviders.register(new LocalFileSystemProvider());
+    dir = await createTemporaryDirectory();
 });
 
 test("Simple test of each of the standard events", async () => {
     const fs = await FileSystems.getDefault();
     const path = fs.getPath("foo");
 
-    let watchService: WatchService | undefined;
+    let watcher: WatchService | undefined;
     try {
-        watchService = fs.newWatchService();
+        watcher = fs.newWatchService();
         // --- ENTRY_CREATE ---
 
         // register for event
+        const myKey = await dir.register(watcher, [StandardWatchEventKinds.ENTRY_CREATE]);
+        checkKey(myKey, dir);
+        // create file
 
+        const file = dir.resolveFromString("foo");
+        await Files.createFile(file);
+
+        // remove key and check that we got the ENTRY_CREATE event
+        await takeExpectedKey(watcher, myKey);
+        checkExpectedEvent(
+            myKey.pollEvents(),
+            StandardWatchEventKinds.ENTRY_CREATE,
+            path
+        );
     } finally {
-        if (watchService)
-            await watchService.close();
+        if (watcher)
+            await watcher.close();
     }
 });

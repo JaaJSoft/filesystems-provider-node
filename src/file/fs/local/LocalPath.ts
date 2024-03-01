@@ -18,16 +18,24 @@
 import {LocalPathType} from "./LocalPathType";
 import * as jsurl from "url";
 import fs from "fs";
-import {FileSystem, LinkOption, Path} from "@filesystems/core/file";
+import {
+    FileSystem,
+    LinkOption,
+    Path,
+    WatchEventKind,
+    WatchEventModifier,
+    WatchKey,
+    WatchService
+} from "@filesystems/core/file";
 import {InvalidPathException, ProviderMismatchException} from "@filesystems/core/file/exception";
 import {Objects} from "@filesystems/core/utils";
 import * as pathFs from "path";
 import {IllegalArgumentException} from "@filesystems/core/exception";
 import os from "os";
+import {PollingWatchService} from "../PollingWatchService";
 
 /* `LocalPath` is a class that represents a path on the local file system. */
 export class LocalPath extends Path {
-
 
     // root component (may be empty)
     private readonly root: string;
@@ -311,6 +319,13 @@ export class LocalPath extends Path {
     public toURL(): URL {
         const path: string = this.toAbsolutePath().toString();
         return jsurl.pathToFileURL(path);
+    }
+
+    public register(watcher: WatchService, events: WatchEventKind<unknown>[], modifier?: WatchEventModifier[] | undefined): Promise<WatchKey> {
+        if (!(watcher instanceof PollingWatchService))
+            throw new ProviderMismatchException();
+
+        return watcher.register(this, events, modifier);
     }
 
     public toString(): string {

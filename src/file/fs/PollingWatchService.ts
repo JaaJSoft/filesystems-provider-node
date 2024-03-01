@@ -82,7 +82,7 @@ export class PollingWatchService extends AbstractWatchService {
             throw new IllegalArgumentException("No events to register");
 
         // no modifiers supported at this time
-        if (!modifiers) {
+        if (modifiers) {
             throw new UnsupportedOperationException("Modifier not supported");
         }
 
