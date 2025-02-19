@@ -16,11 +16,11 @@
  */
 
 import {FileStore} from "@filesystems/core/file";
-import {FileStoreAttributeView} from "@filesystems/core/file/attribute/FileStoreAttributeView";
 import {UnsupportedOperationException} from "@filesystems/core/exception";
 import {Drive} from "drivelist";
 import {LocalPath} from "./LocalPath";
 import {LocalFileSystem} from "./LocalFileSystem";
+import {FileStoreAttributeView} from "@filesystems/core/file/attribute";
 
 /* It represents a drive on the local file system */
 export class LocalFileStore implements FileStore {

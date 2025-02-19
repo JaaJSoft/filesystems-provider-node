@@ -45,7 +45,7 @@ function checkExpectedEvent(
 }
 
 async function takeExpectedKey(watcher: WatchService, expected: WatchKey) {
-    const key = await watcher.poll();
+    const key = await watcher.take();
     expect(key).toBe(expected);
 }
 

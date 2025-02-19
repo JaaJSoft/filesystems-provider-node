@@ -15,8 +15,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {AbstractWatchService} from "@filesystems/core/file/AbstractWatchService";
 import {
+    AbstractWatchKey,
+    AbstractWatchService,
     DirectoryStream,
     Files,
     LinkOption,
@@ -25,15 +26,17 @@ import {
     WatchEventModifier,
     WatchKey
 } from "@filesystems/core/file";
-import {AbstractWatchKey} from "@filesystems/core/file/AbstractWatchKey";
 import {FileTime} from "@filesystems/core/file/attribute";
-import {ClosedWatchServiceException, DirectoryIteratorException} from "@filesystems/core/file/exception";
+import {
+    ClosedWatchServiceException,
+    DirectoryIteratorException,
+    NotDirectoryException
+} from "@filesystems/core/file/exception";
 import {
     IllegalArgumentException,
     NullPointerException,
     UnsupportedOperationException
 } from "@filesystems/core/exception";
-import {NotDirectoryException} from "@filesystems/core/file/exception/NotDirectoryException";
 
 const POLLING_INTERVAL = 2_000;
 
@@ -103,6 +106,7 @@ export class PollingWatchService extends AbstractWatchService {
         if (!watchKey) {
             // new registration
             watchKey = new PollingWatchKey(path, this, fileKey);
+            watchKey.init();
             this._registrations.set(fileKey, watchKey);
         } else {
             watchKey.disable();
