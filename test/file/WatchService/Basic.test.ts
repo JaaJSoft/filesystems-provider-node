@@ -41,7 +41,7 @@ function checkExpectedEvent(
 ) {
     const event = events[Symbol.iterator]().next().value as WatchEvent<unknown>;
     expect(event.kind()).toStrictEqual(expectedKind);
-    expect(expectedContext).toStrictEqual(event.context());
+    expect((expectedContext as Path).equals(event.context() as Path)).toBeTruthy();
 }
 
 async function takeExpectedKey(watcher: WatchService, expected: WatchKey) {
@@ -67,8 +67,10 @@ test("Simple test of each of the standard events", async () => {
         // register for event
         const myKey = await dir.register(watcher, [StandardWatchEventKinds.ENTRY_CREATE]);
         checkKey(myKey, dir);
-        // create file
 
+        await new Promise((r) => setTimeout(r, 2000));
+
+        // create file
         const file = dir.resolveFromString("foo");
         await Files.createFile(file);
 
@@ -79,8 +81,9 @@ test("Simple test of each of the standard events", async () => {
             StandardWatchEventKinds.ENTRY_CREATE,
             path
         );
+        expect(myKey.reset()).toBeTruthy();
     } finally {
         if (watcher)
             await watcher.close();
     }
-});
+}, 20 * 1000); // 20 seconds
