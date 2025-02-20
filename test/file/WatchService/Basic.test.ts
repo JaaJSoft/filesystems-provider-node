@@ -19,6 +19,7 @@ import {
     Files,
     FileSystems,
     Path,
+    StandardOpenOption,
     StandardWatchEventKinds,
     WatchEventKind,
     WatchKey,
@@ -49,6 +50,10 @@ async function takeExpectedKey(watcher: WatchService, expected: WatchKey) {
     expect(key).toBe(expected);
 }
 
+async function wait1Sec() {
+    return new Promise((r) => setTimeout(r, 2000));
+}
+
 let dir: Path;
 beforeAll(async () => {
     FileSystemProviders.register(new LocalFileSystemProvider());
@@ -67,8 +72,7 @@ test("Simple test of each of the standard events", async () => {
         // register for event
         const myKey = await dir.register(watcher, [StandardWatchEventKinds.ENTRY_CREATE]);
         checkKey(myKey, dir);
-
-        await new Promise((r) => setTimeout(r, 2000));
+        await wait1Sec();
 
         // create file
         const file = dir.resolveFromString("foo");
@@ -82,6 +86,43 @@ test("Simple test of each of the standard events", async () => {
             path
         );
         expect(myKey.reset()).toBeTruthy();
+
+        // --- ENTRY_DELETE ---
+        const deleteKey = await dir.register(watcher, [StandardWatchEventKinds.ENTRY_DELETE]);
+        expect(deleteKey).toBe(myKey);
+        checkKey(deleteKey, dir);
+        await wait1Sec();
+
+        await Files.delete(file);
+        await takeExpectedKey(watcher, myKey);
+        checkExpectedEvent(
+            myKey.pollEvents(),
+            StandardWatchEventKinds.ENTRY_DELETE,
+            path
+        );
+        expect(myKey.reset()).toBeTruthy();
+
+        // create the file for the next test
+        await Files.createFile(file);
+
+        // --- ENTRY_MODIFY ---
+        const modifyKey = await dir.register(watcher, [StandardWatchEventKinds.ENTRY_MODIFY]);
+        expect(modifyKey).toBe(myKey);
+        checkKey(deleteKey, dir);
+        await wait1Sec();
+
+        await Files.writeString(file, "I am a small file", [StandardOpenOption.APPEND]);
+
+        // remove key and check that we got the ENTRY_MODIFY event
+        await takeExpectedKey(watcher, myKey);
+        checkExpectedEvent(
+            myKey.pollEvents(),
+            StandardWatchEventKinds.ENTRY_MODIFY,
+            path
+        );
+
+        // done
+        await Files.delete(file);
     } finally {
         if (watcher)
             await watcher.close();
