@@ -29,6 +29,9 @@ import {FileSystemProviders} from "@filesystems/core/file/spi";
 import {LocalFileSystemProvider} from "../../../src";
 import {WatchEvent} from "@filesystems/core/file/WatchEvent";
 import {createTemporaryDirectory} from "../TestUtil";
+import {ChronoUnit} from "@js-joda/core";
+
+const TIMEOUT_20_SECONDS = 20 * 1000;
 
 function checkKey(key: WatchKey, dir: Path) {
     expect(key.isValid()).toBeTruthy();
@@ -54,11 +57,18 @@ async function wait1Sec() {
     return new Promise((r) => setTimeout(r, 2000));
 }
 
+async function closeWatcher(watcher: WatchService | undefined) {
+    if (watcher) {
+        await watcher.close();
+    }
+}
+
 let dir: Path;
 beforeAll(async () => {
     FileSystemProviders.register(new LocalFileSystemProvider());
     dir = await createTemporaryDirectory();
 });
+
 
 test("Simple test of each of the standard events", async () => {
     const fs = await FileSystems.getDefault();
@@ -124,7 +134,47 @@ test("Simple test of each of the standard events", async () => {
         // done
         await Files.delete(file);
     } finally {
-        if (watcher)
-            await watcher.close();
+        await closeWatcher(watcher);
     }
-}, 20 * 1000); // 20 seconds
+}, TIMEOUT_20_SECONDS); // 20 seconds
+
+test("Check that a cancelled key will never be queued", async () => {
+    const fs = await FileSystems.getDefault();
+    let watcher: WatchService | undefined;
+    try {
+        watcher = fs.newWatchService();
+        // register for event
+        const myKey = await dir.register(watcher, [StandardWatchEventKinds.ENTRY_CREATE]);
+        checkKey(myKey, dir);
+        await wait1Sec();
+        myKey.cancel();
+
+        const file = dir.resolveFromString("mars");
+        await Files.createFile(file);
+        const key = await watcher.poll(3000, ChronoUnit.MILLIS);
+        expect(key).toBeNull();
+
+        await Files.delete(file);
+
+    } finally {
+        await closeWatcher(watcher);
+    }
+}, TIMEOUT_20_SECONDS); // 20 seconds
+
+test("Check that deleting a registered directory causes the key to be cancelled and queued.", async () => {
+    const fs = await FileSystems.getDefault();
+    const subDir = await Files.createDirectory(dir.resolveFromString("bar"));
+    let watcher: WatchService | undefined;
+    try {
+        watcher = fs.newWatchService();
+        // register for event
+        const myKey = await subDir.register(watcher, [StandardWatchEventKinds.ENTRY_CREATE]);
+        await wait1Sec();
+        await Files.delete(subDir);
+        await takeExpectedKey(watcher, myKey);
+        expect(myKey.reset()).toBeFalsy();
+        expect(myKey.isValid()).toBeFalsy();
+    } finally {
+        await closeWatcher(watcher);
+    }
+}, TIMEOUT_20_SECONDS);

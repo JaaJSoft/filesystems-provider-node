@@ -16,12 +16,12 @@
  */
 
 import {
-    AbstractWatchKey,
-    AbstractWatchService,
     DirectoryStream,
     Files,
     LinkOption,
-    Path, Paths, StandardWatchEventKinds,
+    Path,
+    Paths,
+    StandardWatchEventKinds,
     WatchEventKind,
     WatchEventModifier,
     WatchKey
@@ -37,6 +37,8 @@ import {
     NullPointerException,
     UnsupportedOperationException
 } from "@filesystems/core/exception";
+import {AbstractWatchService} from "./AbstractWatchService";
+import {AbstractWatchKey} from "./AbstractWatchKey";
 
 const POLLING_INTERVAL = 2_000;
 
