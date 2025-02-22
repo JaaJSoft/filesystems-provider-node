@@ -1,6 +1,6 @@
 /*
  * FileSystems - FileSystem abstraction for JavaScript
- * Copyright (C) 2022 JaaJSoft
+ * Copyright (C) 2024 JaaJSoft
  *
  * this program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,7 +18,16 @@
 import {LocalPathType} from "./LocalPathType";
 import * as jsurl from "url";
 import fs from "fs";
-import {FileSystem, LinkOption, Path} from "@filesystems/core/file";
+import {
+    FileSystem,
+    LinkOption,
+    Path,
+    WatchEventKind,
+    WatchEventModifier,
+    WatchKey,
+    WatchService
+} from "@filesystems/core/file";
+import {PollingWatchService} from "@filesystems/core/file/watch";
 import {InvalidPathException, ProviderMismatchException} from "@filesystems/core/file/exception";
 import {Objects} from "@filesystems/core/utils";
 import * as pathFs from "path";
@@ -27,7 +36,6 @@ import os from "os";
 
 /* `LocalPath` is a class that represents a path on the local file system. */
 export class LocalPath extends Path {
-
 
     // root component (may be empty)
     private readonly root: string;
@@ -54,7 +62,6 @@ export class LocalPath extends Path {
     public static parse(fileSystem: FileSystem, path: string): LocalPath {
         const parse = pathFs.parse(path);
         return LocalPath.pathFromJsPath(parse, fileSystem, LocalPathType.RELATIVE);
-
     }
 
     public static toLocalPath(path: Path): LocalPath {
@@ -141,7 +148,11 @@ export class LocalPath extends Path {
     }
 
     public normalize(): Path {
-        return LocalPath.parse(this.fileSystem, pathFs.normalize(this.toString()));
+        let norm = pathFs.normalize(this.toString());
+        if (norm.endsWith(norm + ".") || norm.endsWith(":.") || (norm.length === 1 && norm === ".")) {
+            norm = norm.substring(0, norm.length - 1);
+        }
+        return LocalPath.parse(this.fileSystem, norm);
     }
 
     public relativize(other: Path): Path {
@@ -310,6 +321,13 @@ export class LocalPath extends Path {
         return jsurl.pathToFileURL(path);
     }
 
+    public register(watcher: WatchService, events: WatchEventKind<unknown>[], modifier?: WatchEventModifier[] | undefined): Promise<WatchKey> {
+        if (!(watcher instanceof PollingWatchService))
+            throw new ProviderMismatchException();
+
+        return watcher.register(this, events, modifier);
+    }
+
     public toString(): string {
         return this.path;
     }
@@ -342,11 +360,13 @@ export class LocalPath extends Path {
     }
 
     private static cleanSeparator(path: string): string {
+        const p = path.replaceAll("\\", "/").replace(/([^:]\/)\/+/g, "$1");
         if (os.platform() === "win32") {
-            return path.replaceAll("/", "\\");
-        } else {
-            return path.replaceAll("\\", "/");
+            return p.replaceAll("/", "\\").replaceAll(":\\\\", ":\\");
+        } else if (p.startsWith("/")) {
+            return p.replaceAll("//", "/");
         }
+        return p;
     }
 
     private static pathFromJsPath(path: pathFs.ParsedPath, fileSystem: FileSystem, pathType: LocalPathType) {// TODO refactor
@@ -363,6 +383,7 @@ export class LocalPath extends Path {
                 root += separator;
             }
         }
+
         if (newPath.startsWith("\\\\")) {
             pathType = LocalPathType.UNC;
         } else if (newPath.startsWith("/") || (newPath.length >= 3 && newPath.charAt(1) === ":" && newPath.charAt(2) === separator)) {

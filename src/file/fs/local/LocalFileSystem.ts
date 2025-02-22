@@ -1,6 +1,6 @@
 /*
  * FileSystems - FileSystem abstraction for JavaScript
- * Copyright (C) 2022 JaaJSoft
+ * Copyright (C) 2024 JaaJSoft
  *
  * this program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,7 +19,7 @@ import * as jsPath from "path";
 import {FileSystemProvider} from "@filesystems/core/file/spi";
 import {LocalFileSystemProvider} from "./LocalFileSystemProvider";
 import {IllegalArgumentException, UnsupportedOperationException} from "@filesystems/core/exception";
-import {FileStore, FileSystem, Path, PathMatcher} from "@filesystems/core/file";
+import {FileStore, FileSystem, Path, PathMatcher, WatchService} from "@filesystems/core/file";
 import {Objects} from "@filesystems/core/utils";
 import {LocalPath} from "./LocalPath";
 import {AttributeViewName, UserPrincipalLookupService} from "@filesystems/core/file/attribute";
@@ -27,8 +27,10 @@ import {list} from "drivelist";
 import {LocalFileStore} from "./LocalFileStore";
 import micromatch from "micromatch";
 import os from "os";
+import { PollingWatchService } from "@filesystems/core/file/watch";
 
 export class LocalFileSystem extends FileSystem {
+
     private readonly fsProvider: FileSystemProvider;
     private readonly defaultDirectory: string;
     private readonly defaultRoot: string;
@@ -56,9 +58,10 @@ export class LocalFileSystem extends FileSystem {
         if ((more == null) || more.length === 0) {
             path = first;
         } else {
+            path = first;
             for (const segment of more) {
                 if (segment.length !== 0) {
-                    if (path.length > 0) {
+                    if (path.length > 0 && !segment.startsWith(this.getSeparator())) {
                         path += this.getSeparator();
                     }
                     path += segment;
@@ -149,5 +152,11 @@ export class LocalFileSystem extends FileSystem {
 
     public getDefaultRoot(): string {
         return this.defaultRoot;
+    }
+
+    public newWatchService(): WatchService {
+        const watchService = new PollingWatchService(); // TODO replace with os watcher
+        watchService.init();
+        return watchService;
     }
 }

@@ -11,7 +11,6 @@ import {
     PosixFileAttributes,
     PosixFilePermission
 } from "@filesystems/core/file/attribute";
-import os from "os";
 
 let dir: Path;
 let file: Path;

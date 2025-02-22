@@ -1,6 +1,6 @@
 /*
  * FileSystems - FileSystem abstraction for JavaScript
- * Copyright (C) 2022 JaaJSoft
+ * Copyright (C) 2024 JaaJSoft
  *
  * this program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -95,7 +95,7 @@ test("LocalPathNewImputStream", async () => {
     let done = false;
     let output = "";
     while (!done) {
-        const v: ReadableStreamDefaultReadValueResult<string> | ReadableStreamDefaultReadDoneResult = await reader.read();
+        const v: ReadableStreamDefaultReadValueResult | ReadableStreamDefaultReadDoneResult = await reader.read();
         done = v.done;
         if (!done) {
             output += v.value;
