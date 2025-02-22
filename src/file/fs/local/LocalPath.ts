@@ -27,12 +27,12 @@ import {
     WatchKey,
     WatchService
 } from "@filesystems/core/file";
+import {PollingWatchService} from "@filesystems/core/file/watch";
 import {InvalidPathException, ProviderMismatchException} from "@filesystems/core/file/exception";
 import {Objects} from "@filesystems/core/utils";
 import * as pathFs from "path";
 import {IllegalArgumentException} from "@filesystems/core/exception";
 import os from "os";
-import {PollingWatchService} from "../PollingWatchService";
 
 /* `LocalPath` is a class that represents a path on the local file system. */
 export class LocalPath extends Path {

@@ -27,7 +27,7 @@ import {list} from "drivelist";
 import {LocalFileStore} from "./LocalFileStore";
 import micromatch from "micromatch";
 import os from "os";
-import {PollingWatchService} from "../PollingWatchService";
+import { PollingWatchService } from "@filesystems/core/file/watch";
 
 export class LocalFileSystem extends FileSystem {
 
