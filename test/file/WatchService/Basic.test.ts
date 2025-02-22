@@ -29,7 +29,9 @@ import {FileSystemProviders} from "@filesystems/core/file/spi";
 import {LocalFileSystemProvider} from "../../../src";
 import {WatchEvent} from "@filesystems/core/file/WatchEvent";
 import {createTemporaryDirectory} from "../TestUtil";
-import {ChronoUnit} from "@js-joda/core";
+import {ChronoUnit, Instant} from "@js-joda/core";
+import {IllegalArgumentException, UnsupportedOperationException} from "@filesystems/core/exception";
+import {ClosedWatchServiceException} from "@filesystems/core/file/exception";
 
 const TIMEOUT_20_SECONDS = 20 * 1000;
 
@@ -177,4 +179,113 @@ test("Check that deleting a registered directory causes the key to be cancelled 
     } finally {
         await closeWatcher(watcher);
     }
+}, TIMEOUT_20_SECONDS);
+
+test("Simple test to check exceptions and other cases", async () => {
+    const fs = await FileSystems.getDefault();
+    let watcher: WatchService | undefined;
+    try {
+        watcher = fs.newWatchService();
+        // Poll tests
+        let key = await watcher.poll();
+        expect(key).toBeNull();
+        const start = Instant.now().toEpochMilli();
+        key = await watcher.poll(3000, ChronoUnit.MILLIS);
+        const waited = Instant.now().toEpochMilli() - start;
+        expect(key).toBeNull();
+        expect(waited).toBeGreaterThan(2900);
+
+        // IllegalArgumentException
+        try {
+            await dir.register(watcher, []);
+            throw new Error("IllegalArgumentException not thrown");
+        } catch (e) {
+            expect(e instanceof IllegalArgumentException).toBeTruthy();
+        }
+
+        // OVERFLOW is ignored so this is equivalent to the empty set
+        try {
+            await dir.register(watcher, [StandardWatchEventKinds.OVERFLOW]);
+            throw new Error("IllegalArgumentException not thrown");
+        } catch (e) {
+            expect(e instanceof IllegalArgumentException).toBeTruthy();
+        }
+
+        // OVERFLOW is ignored even if specified multiple times
+        try {
+            await dir.register(watcher, [StandardWatchEventKinds.OVERFLOW, StandardWatchEventKinds.OVERFLOW]);
+            throw new Error("IllegalArgumentException not thrown");
+        } catch (e) {
+            expect(e instanceof IllegalArgumentException).toBeTruthy();
+        }
+
+        // UnsupportedOperationException
+        try {
+            await dir.register(watcher, [new class implements WatchEventKind<unknown> {
+                name(): string {
+                    return "custom";
+                }
+
+                type(): string {
+                    return "custom";
+                }
+            }]);
+            throw new Error("UnsupportedOperationException not thrown");
+        } catch (e) {
+            expect(e instanceof UnsupportedOperationException).toBeTruthy();
+        }
+
+        try {
+            await dir.register(watcher, [StandardWatchEventKinds.ENTRY_CREATE, new class implements WatchEventKind<unknown> {
+                name(): string {
+                    return "custom";
+                }
+
+                type(): string {
+                    return "custom";
+                }
+            }]);
+            throw new Error("UnsupportedOperationException not thrown");
+        } catch (e) {
+            expect(e instanceof UnsupportedOperationException).toBeTruthy();
+        }
+
+    } finally {
+        await closeWatcher(watcher);
+    }
+
+    // -- ClosedWatchServiceException --
+    try {
+        await watcher.poll();
+        throw new Error("ClosedWatchServiceException not thrown");
+    } catch (e) {
+        expect(e instanceof ClosedWatchServiceException).toBeTruthy();
+    }
+
+    // assume that poll throws exception immediately
+    const start = Instant.now().toEpochMilli();
+    try {
+        await watcher.poll(10000, ChronoUnit.MILLIS);
+        throw new Error("ClosedWatchServiceException not thrown");
+    } catch (e) {
+        expect(e instanceof ClosedWatchServiceException).toBeTruthy();
+        const waited = Instant.now().toEpochMilli() - start;
+        expect(waited).toBeLessThan(5000);
+    }
+
+    try {
+        await watcher.take();
+        throw new Error("ClosedWatchServiceException not thrown");
+    } catch (e) {
+        expect(e instanceof ClosedWatchServiceException).toBeTruthy();
+    }
+
+    try {
+        await dir.register(watcher, [StandardWatchEventKinds.ENTRY_CREATE]);
+        throw new Error("ClosedWatchServiceException not thrown");
+    } catch (e) {
+        expect(e instanceof ClosedWatchServiceException).toBeTruthy();
+    }
+
+
 }, TIMEOUT_20_SECONDS);
