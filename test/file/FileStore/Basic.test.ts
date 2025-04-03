@@ -1,6 +1,6 @@
 /*
  * FileSystems - FileSystem abstraction for JavaScript
- * Copyright (C) 2022 JaaJSoft
+ * Copyright (C) 2025 JaaJSoft
  *
  * this program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -82,7 +82,7 @@ test("File and FileStore attributes", async () => {
     expect(store1.supportsFileAttributeView("dos")).toBeFalsy();
 });
 
-test("Space atributes", async () => {
+test("Space attributes", async () => {
     const file1 = await Files.createFile(dir.resolveFromString("foo"));
     const store1 = await Files.getFileStore(file1);
 
@@ -93,6 +93,7 @@ test("Space atributes", async () => {
     checkWithin1GB(total, store1.getAttribute("totalSpace") as bigint);
     checkWithin1GB(usable, store1.getAttribute("usableSpace") as bigint);
 });
+
 test("Enumerate all FileStores", async () => {
     let prev: FileStore | null = null;
     for (const store of await (await FileSystems.getDefault()).getFileStores()) {
@@ -117,7 +118,6 @@ test("Enumerate all FileStores", async () => {
         prev = store;
     }
 });
-
 
 afterAll(async () => {
     await removeAll(dir);
