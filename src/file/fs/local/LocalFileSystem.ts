@@ -1,6 +1,6 @@
 /*
  * FileSystems - FileSystem abstraction for JavaScript
- * Copyright (C) 2024 JaaJSoft
+ * Copyright (C) 2025 JaaJSoft
  *
  * this program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -23,7 +23,7 @@ import {FileStore, FileSystem, Path, PathMatcher, WatchService} from "@filesyste
 import {Objects} from "@filesystems/core/utils";
 import {LocalPath} from "./LocalPath";
 import {AttributeViewName, UserPrincipalLookupService} from "@filesystems/core/file/attribute";
-import {list} from "drivelist";
+import si, {blockDevices, Systeminformation} from "systeminformation";
 import {LocalFileStore} from "./LocalFileStore";
 import micromatch from "micromatch";
 import os from "os";
@@ -48,8 +48,28 @@ export class LocalFileSystem extends FileSystem {
     }
 
     public async getFileStores(): Promise<Iterable<FileStore>> {
-        const drives = await list();
-        return drives.map(value => LocalFileStore.create(this, value));
+        const [devices, filesystems] = await Promise.all([blockDevices(), si.fsSize()]);
+        const devicesMap = new Map<string, Systeminformation.BlockDevicesData>(devices.map(device => [device.name, device]));
+        return filesystems.map(fs => {
+            const shortFsName = fs.fs.replace("/dev/", "");
+            const device = devicesMap.get(shortFsName);
+            const mountPath = fs.mount + (os.platform() === "win32" ? "\\" : "");
+            return new LocalFileStore(
+                fs.fs,
+                device ? device.physical + " " + device.type : "",
+                0n,
+                BigInt(fs.size),
+                0n,
+                BigInt(fs.available),
+                !fs.rw,
+                device ? device.removable : false,
+                false,
+                [this.getPath(mountPath) as LocalPath],
+                device ? device.label : "",
+                false,
+                fs.type
+            );
+        });
     }
 
     public getPath(first: string, more?: string[]): Path {

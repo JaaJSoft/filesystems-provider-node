@@ -1,6 +1,6 @@
 /*
  * FileSystems - FileSystem abstraction for JavaScript
- * Copyright (C) 2022 JaaJSoft
+ * Copyright (C) 2025 JaaJSoft
  *
  * this program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -16,11 +16,9 @@
  */
 
 import {FileStore} from "@filesystems/core/file";
+import {FileStoreAttributeView} from "@filesystems/core/file/attribute/FileStoreAttributeView";
 import {UnsupportedOperationException} from "@filesystems/core/exception";
-import {Drive} from "drivelist";
 import {LocalPath} from "./LocalPath";
-import {LocalFileSystem} from "./LocalFileSystem";
-import {FileStoreAttributeView} from "@filesystems/core/file/attribute";
 
 /* It represents a drive on the local file system */
 export class LocalFileStore implements FileStore {
@@ -36,6 +34,7 @@ export class LocalFileStore implements FileStore {
     private readonly _mountPoints: LocalPath[];
     private readonly _displayName: string;
     private readonly _system: boolean;
+    private readonly _fsType: string;
 
     constructor(
         name: string,
@@ -50,6 +49,7 @@ export class LocalFileStore implements FileStore {
         mountPoints: LocalPath[],
         displayName: string,
         system: boolean,
+        fsType: string,
     ) {
         this._name = name;
         this._type = type;
@@ -63,29 +63,7 @@ export class LocalFileStore implements FileStore {
         this._mountPoints = mountPoints;
         this._displayName = displayName;
         this._system = system;
-    }
-
-    /**
-     * It creates a new LocalFileStore object
-     * @param {LocalFileSystem} fs - The file system that the drive is mounted on.
-     * @param {Drive} drive - Drive
-     * @returns A new LocalFileStore object.
-     */
-    public static create(fs: LocalFileSystem, drive: Drive): LocalFileStore {
-        return new LocalFileStore(
-            drive.device,
-            drive.busType,
-            BigInt(drive.blockSize),
-            drive.size ? BigInt(drive.size) : 0n,
-            0n,
-            0n,
-            drive.isReadOnly,
-            drive.isRemovable,
-            false,
-            drive.mountpoints.map(value => fs.getPath(value.path) as LocalPath),
-            drive.description,
-            drive.isSystem,
-        );
+        this._fsType = fsType;
     }
 
     public name(): string {
@@ -136,6 +114,10 @@ export class LocalFileStore implements FileStore {
         return this._system;
     }
 
+    public getFsType(): string {
+        return this._fsType;
+    }
+
     /**
      * If the attribute is one of the standard ones, return the value of the corresponding function, otherwise throw an
      * exception.
@@ -158,6 +140,8 @@ export class LocalFileStore implements FileStore {
             return this.isCdRom();
         if (attribute === "volume:isSystem")
             return this.isSystem();
+        if (attribute === "fsType")
+            return this.getFsType();
         throw new UnsupportedOperationException("'" + attribute + "' not recognized");
     }
 
